@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Isekai Open World - Fantasía Mágica</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- HUD Superior -->
+    <div id="hud">
+      <div class="stat">❤️ HP: <span id="hp">100</span>/100</div>
+      <div class="stat">💙 Mana: <span id="mana">50</span>/50</div>
+      <div class="stat">⭐ Nivel: <span id="level">1</span></div>
+      <div class="stat">💰 Oro: <span id="gold">0</span></div>
+      <div class="stat" id="wanted-stat">🔍 Estado: <span id="wanted">Libre</span></div>
+    </div>
+
+    <!-- Mensaje de estado -->
+    <div id="message"></div>
+
+    <!-- Controles Táctiles -->
+    <div id="controls">
+      <div id="dpad">
+        <button class="dpad-btn" id="up" data-dir="up">▲</button>
+        <div class="dpad-middle">
+          <button class="dpad-btn" id="left" data-dir="left">◀</button>
+          <button class="dpad-btn" id="right" data-dir="right">▶</button>
+        </div>
+        <button class="dpad-btn" id="down" data-dir="down">▼</button>
+      </div>
+      <div id="action-buttons">
+        <button id="interact-btn" class="action-btn">¡ROBAR / INTERACTUAR!</button>
+        <button id="attack-btn" class="action-btn magic">⚔️ MAGIA</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
