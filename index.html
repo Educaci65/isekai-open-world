@@ -1,46 +1,562 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <title>Isekai Open World - Fantasía Mágica</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<title>Isekai Open World — Dios Edition</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#0f172a;font-family:system-ui,-apple-system,sans-serif}
+#c{display:block;width:100%;height:100%;background:#1a3a1a}
+#hud{position:absolute;top:0;left:0;right:0;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:linear-gradient(180deg,rgba(0,0,0,.85),rgba(0,0,0,.35),transparent);z-index:20;pointer-events:none;display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bar-wrap{flex:1;min-width:90px;max-width:160px}
+.bar-label{font-size:10px;color:#e2e8f0;margin-bottom:2px;font-weight:600;text-shadow:0 1px 2px #000}
+.bar{height:12px;background:rgba(0,0,0,.55);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.bar-fill{height:100%;border-radius:5px;transition:width .15s}
+.hp-fill{background:linear-gradient(90deg,#dc2626,#ef4444)}
+.mp-fill{background:linear-gradient(90deg,#2563eb,#3b82f6)}
+.stat{background:rgba(0,0,0,.5);padding:4px 9px;border-radius:8px;color:#f1f5f9;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,.1);text-shadow:0 1px 2px #000}
+.wanted{display:flex;gap:3px;align-items:center}
+.star{width:14px;height:14px;background:#334155;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);transition:background .2s}
+.star.on{background:#fbbf24;box-shadow:0 0 6px #f59e0b}
+#log{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:25;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:92%;max-width:360px}
+.log-msg{background:rgba(15,23,42,.88);color:#fde68a;padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;border:1px solid rgba(251,191,36,.3);box-shadow:0 4px 12px rgba(0,0,0,.4);animation:fadeIn .25s ease;opacity:0;transition:opacity .4s}
+.log-msg.show{opacity:1}
+@keyframes fadeIn{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
+#ui{position:absolute;inset:0;z-index:30;pointer-events:none}
+#joystick-zone{position:absolute;left:0;bottom:0;width:48%;height:42%;pointer-events:auto}
+#joy-base{position:absolute;width:110px;height:110px;border-radius:50%;background:rgba(30,41,59,.45);border:2px solid rgba(148,163,184,.35);left:28px;bottom:28px;bottom:max(28px,env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:center}
+#joy-knob{width:48px;height:48px;border-radius:50%;background:rgba(226,232,240,.75);border:2px solid rgba(255,255,255,.5);box-shadow:0 2px 8px rgba(0,0,0,.4);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);transition:background .1s}
+#btns{position:absolute;right:12px;bottom:max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;pointer-events:auto;align-items:flex-end}
+.btn{width:72px;height:72px;border-radius:50%;border:2px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;box-shadow:0 4px 0 rgba(0,0,0,.45);cursor:pointer;transition:transform .06s,box-shadow .06s;text-shadow:0 1px 2px #000}
+.btn:active,.btn.active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.45)}
+.btn-atk{background:radial-gradient(circle at 30% 30%,#7c3aed,#4c1d95)}
+.btn-int{background:radial-gradient(circle at 30% 30%,#b45309,#78350f);width:64px;height:64px;font-size:10px}
+.btn-dash{background:radial-gradient(circle at 30% 30%,#0e7490,#164e63);width:58px;height:58px;font-size:10px}
+#minimap{position:absolute;top:max(8px,env(safe-area-inset-top));right:8px;width:90px;height:70px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.15);border-radius:8px;z-index:22;pointer-events:none;overflow:hidden}
+@media(max-width:380px){.btn{width:62px;height:62px;font-size:10px}#joy-base{width:96px;height:96px;left:16px}#joy-knob{width:42px;height:42px}}
+</style>
 </head>
 <body>
-  <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    
-    <!-- HUD Superior -->
-    <div id="hud">
-      <div class="stat">❤️ HP: <span id="hp">100</span>/100</div>
-      <div class="stat">💙 Mana: <span id="mana">50</span>/50</div>
-      <div class="stat">⭐ Nivel: <span id="level">1</span></div>
-      <div class="stat">💰 Oro: <span id="gold">0</span></div>
-      <div class="stat" id="wanted-stat">🔍 Estado: <span id="wanted">Libre</span></div>
-    </div>
-
-    <!-- Mensaje de estado -->
-    <div id="message"></div>
-
-    <!-- Controles Táctiles -->
-    <div id="controls">
-      <div id="dpad">
-        <button class="dpad-btn" id="up" data-dir="up">▲</button>
-        <div class="dpad-middle">
-          <button class="dpad-btn" id="left" data-dir="left">◀</button>
-          <button class="dpad-btn" id="right" data-dir="right">▶</button>
-        </div>
-        <button class="dpad-btn" id="down" data-dir="down">▼</button>
-      </div>
-      <div id="action-buttons">
-        <button id="interact-btn" class="action-btn">¡ROBAR / INTERACTUAR!</button>
-        <button id="attack-btn" class="action-btn magic">⚔️ MAGIA</button>
-      </div>
-    </div>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div class="row">
+    <div class="bar-wrap"><div class="bar-label">❤️ HP</div><div class="bar"><div class="bar-fill hp-fill" id="hpBar" style="width:100%"></div></div></div>
+    <div class="bar-wrap"><div class="bar-label">💙 MANA</div><div class="bar"><div class="bar-fill mp-fill" id="mpBar" style="width:100%"></div></div></div>
+    <div class="stat">⭐ <span id="lvl">1</span></div>
+    <div class="stat">💰 <span id="gold">0</span></div>
   </div>
+  <div class="row">
+    <div class="stat wanted" id="wantedBox">Inquisición: <div id="stars" class="wanted"></div></div>
+  </div>
+</div>
+<div id="log"></div>
+<canvas id="minimap" width="90" height="70"></canvas>
+<div id="ui">
+  <div id="joystick-zone">
+    <div id="joy-base"><div id="joy-knob"></div></div>
+  </div>
+  <div id="btns">
+    <button class="btn btn-atk" id="btnAtk">🔥 MAGIA</button>
+    <button class="btn btn-int" id="btnInt">💰 ROBAR<br>INTERACT</button>
+    <button class="btn btn-dash" id="btnDash">💨 DASH</button>
+  </div>
+</div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false});
+const mm=document.getElementById('minimap'),mctx=mm.getContext('2d');
+let W=0,H=0,dpr=1;
+const TILE=40,MAP_W=90,MAP_H=70,WORLD_W=MAP_W*TILE,WORLD_H=MAP_H*TILE;
+const cam={x:0,y:0,tx:0,ty:0};
+const player={x:WORLD_W/2,y:WORLD_H/2,w:24,h:24,vx:0,vy:0,speed:3.1,hp:100,maxHp:100,mana:60,maxMana:60,level:1,xp:0,gold:0,wanted:0,facing:0,inv:0,dashCd:0,dashT:0,mounted:false,mountSpd:5.2};
+const keys={x:0,y:0};
+let joyActive=false,joyId=null,joyOX=0,joyOY=0,joyDX=0,joyDY=0;
+const buildings=[],obstacles=[],npcs=[],enemies=[],guards=[],carriages=[],projectiles=[],particles=[],msgs=[];
+const JOY_R=48;
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);resize();
 
-  <script src="script.js"></script>
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function dist(ax,ay,bx,by){return Math.hypot(ax-bx,ay-by)}
+function aabb(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function showMsg(t,ms=2200){
+  const el=document.createElement('div');el.className='log-msg';el.textContent=t;
+  document.getElementById('log').appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400)},ms);
+}
+function updateHUD(){
+  document.getElementById('hpBar').style.width=(player.hp/player.maxHp*100)+'%';
+  document.getElementById('mpBar').style.width=(player.mana/player.maxMana*100)+'%';
+  document.getElementById('lvl').textContent=player.level;
+  document.getElementById('gold').textContent=player.gold;
+  const s=document.getElementById('stars');s.innerHTML='';
+  for(let i=0;i<5;i++){const st=document.createElement('div');st.className='star'+(i<player.wanted?' on':'');s.appendChild(st)}
+}
+
+// ===== MAP GENERATION =====
+function addBuilding(x,y,w,h,color,name,solid=true){
+  const b={x,y,w,h,color,name};
+  buildings.push(b);
+  if(solid)obstacles.push({x,y,w,h});
+}
+// Castle (royal)
+addBuilding(38*TILE,8*TILE,14*TILE,10*TILE,'#4a5568','Castillo Real');
+addBuilding(40*TILE,6*TILE,3*TILE,3*TILE,'#2d3748','Torre N');
+addBuilding(47*TILE,6*TILE,3*TILE,3*TILE,'#2d3748','Torre N');
+// Town
+addBuilding(32*TILE,28*TILE,7*TILE,5*TILE,'#8B4513','Taberna');
+addBuilding(42*TILE,26*TILE,6*TILE,6*TILE,'#A0522D','Herrer\u00eda');
+addBuilding(28*TILE,34*TILE,5*TILE,4*TILE,'#6B4423','Mercado');
+addBuilding(48*TILE,33*TILE,6*TILE,4*TILE,'#7A5230','Templo');
+addBuilding(36*TILE,38*TILE,8*TILE,4*TILE,'#5C4033','Ayuntamiento');
+// Walls
+addBuilding(24*TILE,20*TILE,36*TILE,TILE,'#555','Muralla N');
+addBuilding(24*TILE,20*TILE,TILE,24*TILE,'#555','Muralla O');
+addBuilding(59*TILE,20*TILE,TILE,24*TILE,'#555','Muralla E');
+addBuilding(24*TILE,43*TILE,36*TILE,TILE,'#555','Muralla S');
+// Outer
+addBuilding(8*TILE,12*TILE,5*TILE,4*TILE,'#6B3A2A','Caba\u00f1a');
+addBuilding(70*TILE,14*TILE,5*TILE,4*TILE,'#5A3A2A','Torre Vig\u00eda');
+addBuilding(10*TILE,50*TILE,6*TILE,4*TILE,'#704214','Granja');
+addBuilding(65*TILE,52*TILE,5*TILE,3*TILE,'#4A3020','Ruinas');
+addBuilding(55*TILE,8*TILE,4*TILE,3*TILE,'#6B4423','Caba\u00f1a N');
+// Trees as obstacles
+for(let i=0;i<55;i++){
+  let tx=Math.floor(Math.random()*MAP_W),ty=Math.floor(Math.random()*MAP_H);
+  if(tx>22&&tx<62&&ty>18&&ty<46)continue;
+  obstacles.push({x:tx*TILE+6,y:ty*TILE+6,w:28,h:28,tree:1});
+}
+function isPath(tx,ty){
+  if(ty>=30&&ty<=32&&tx>=6&&tx<=84)return 1;
+  if(tx>=39&&tx<=41&&ty>=8&&ty<=55)return 1;
+  if(tx>=28&&tx<=52&&ty>=26&&ty<=40)return 1;
+  return 0;
+}
+function solidAt(x,y,w,h){
+  const r={x,y,w,h};
+  for(const o of obstacles)if(aabb(r,o))return 1;
+  return 0;
+}
+function tryMove(e,dx,dy){
+  const nx=e.x+dx,ny=e.y+dy;
+  if(!solidAt(nx,e.y,e.w,e.h))e.x=nx;
+  if(!solidAt(e.x,ny,e.w,e.h))e.y=ny;
+  e.x=clamp(e.x,0,WORLD_W-e.w);e.y=clamp(e.y,0,WORLD_H-e.h);
+}
+
+// ===== ENTITIES =====
+const names=['Aldeano','Mercader','Bardo','Cazador','Hechicera','Granjero','Guardia Civil','Viajero'];
+for(let i=0;i<16;i++){
+  let x,y,t=0;
+  do{x=(12+Math.random()*66)*TILE;y=(14+Math.random()*42)*TILE;t++}while(solidAt(x,y,18,18)&&t<40);
+  npcs.push({x,y,w:18,h:18,vx:0,vy:0,spd:0.55+Math.random()*0.4,timer:0,name:names[i%names.length],gold:8+Math.floor(Math.random()*30),quest:Math.random()>0.7,color:`hsl(${20+Math.random()*50},55%,42%)`});
+}
+for(let i=0;i<10;i++){
+  let x,y,t=0;
+  do{x=Math.random()*WORLD_W;y=Math.random()*WORLD_H;t++}while((x>22*TILE&&x<60*TILE&&y>18*TILE&&y<45*TILE)||(solidAt(x,y,20,20)&&t<50));
+  const knight=Math.random()>0.5;
+  enemies.push({x,y,w:20,h:20,hp:knight?45:28,maxHp:knight?45:28,spd:knight?1.35:1.75,dmg:knight?14:9,type:knight?'knight':'goblin',color:knight?'#5b21b6':'#166534',px:x,py:y,cd:0,alive:1});
+}
+for(let i=0;i<6;i++){
+  guards.push({x:(30+Math.random()*20)*TILE,y:(22+Math.random()*16)*TILE,w:20,h:20,hp:55,maxHp:55,spd:2.1,dmg:16,cd:0,alive:1,aggro:0});
+}
+for(let i=0;i<5;i++){
+  carriages.push({x:(18+Math.random()*55)*TILE,y:(16+Math.random()*38)*TILE,w:36,h:22,color:['#92400e','#78350f','#a16207','#713f12','#854d0e'][i],stolen:0,spd:4.8});
+}
+
+// ===== INPUT =====
+const joyBase=document.getElementById('joy-base'),joyKnob=document.getElementById('joy-knob'),zone=document.getElementById('joystick-zone');
+function setJoy(dx,dy){
+  const len=Math.hypot(dx,dy)||1;
+  const cl=Math.min(len,JOY_R);
+  joyDX=(dx/len)*cl;joyDY=(dy/len)*cl;
+  joyKnob.style.transform=`translate(calc(-50% + ${joyDX}px), calc(-50% + ${joyDY}px))`;
+  keys.x=joyDX/JOY_R;keys.y=joyDY/JOY_R;
+}
+zone.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0];
+  joyId=t.identifier;joyActive=1;
+  const r=joyBase.getBoundingClientRect();
+  joyOX=r.left+r.width/2;joyOY=r.top+r.height/2;
+  setJoy(t.clientX-joyOX,t.clientY-joyOY);
+},{passive:false});
+zone.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches)if(t.identifier===joyId){setJoy(t.clientX-joyOX,t.clientY-joyOY);break}
+},{passive:false});
+function endJoy(e){
+  for(const t of e.changedTouches)if(t.identifier===joyId){
+    joyActive=0;joyId=null;keys.x=0;keys.y=0;
+    joyKnob.style.transform='translate(-50%,-50%)';break;
+  }
+}
+zone.addEventListener('touchend',endJoy,{passive:false});
+zone.addEventListener('touchcancel',endJoy,{passive:false});
+// Mouse joy for desktop
+let mouseJoy=0;
+zone.addEventListener('mousedown',e=>{
+  mouseJoy=1;const r=joyBase.getBoundingClientRect();
+  joyOX=r.left+r.width/2;joyOY=r.top+r.height/2;
+  setJoy(e.clientX-joyOX,e.clientY-joyOY);
+});
+window.addEventListener('mousemove',e=>{if(mouseJoy)setJoy(e.clientX-joyOX,e.clientY-joyOY)});
+window.addEventListener('mouseup',()=>{if(mouseJoy){mouseJoy=0;keys.x=0;keys.y=0;joyKnob.style.transform='translate(-50%,-50%)'}});
+// Keyboard
+window.addEventListener('keydown',e=>{
+  if(e.code==='KeyW'||e.code==='ArrowUp')keys.y=-1;
+  if(e.code==='KeyS'||e.code==='ArrowDown')keys.y=1;
+  if(e.code==='KeyA'||e.code==='ArrowLeft')keys.x=-1;
+  if(e.code==='KeyD'||e.code==='ArrowRight')keys.x=1;
+  if(e.code==='KeyE'||e.code==='Space')doInteract();
+  if(e.code==='KeyF'||e.code==='KeyQ')doAttack();
+  if(e.code==='ShiftLeft'||e.code==='KeyC')doDash();
+});
+window.addEventListener('keyup',e=>{
+  if(e.code==='KeyW'||e.code==='ArrowUp'||e.code==='KeyS'||e.code==='ArrowDown')keys.y=0;
+  if(e.code==='KeyA'||e.code==='ArrowLeft'||e.code==='KeyD'||e.code==='ArrowRight')keys.x=0;
+});
+function bindBtn(id,fn){
+  const el=document.getElementById(id);
+  const down=e=>{e.preventDefault();el.classList.add('active');fn()};
+  const up=e=>{e.preventDefault();el.classList.remove('active')};
+  el.addEventListener('touchstart',down,{passive:false});
+  el.addEventListener('touchend',up,{passive:false});
+  el.addEventListener('mousedown',down);
+  el.addEventListener('mouseup',up);el.addEventListener('mouseleave',up);
+}
+bindBtn('btnAtk',doAttack);
+bindBtn('btnInt',doInteract);
+bindBtn('btnDash',doDash);
+
+// ===== ACTIONS =====
+function doAttack(){
+  if(player.mana<10){showMsg('\u00a1Sin man\u00e1!');return}
+  player.mana-=10;
+  let dx=keys.x,dy=keys.y;
+  if(Math.abs(dx)<0.1&&Math.abs(dy)<0.1){
+    if(player.facing===0)dx=1;else if(player.facing===1)dy=1;else if(player.facing===2)dx=-1;else dy=-1;
+  }
+  const len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;
+  projectiles.push({x:player.x+player.w/2,y:player.y+player.h/2,vx:dx*8.5,vy:dy*8.5,life:50,dmg:18+player.level*4,r:7});
+  updateHUD();
+}
+function doDash(){
+  if(player.dashCd>0||player.dashT>0)return;
+  let dx=keys.x,dy=keys.y;
+  if(Math.abs(dx)<0.15&&Math.abs(dy)<0.15){
+    if(player.facing===0)dx=1;else if(player.facing===1)dy=1;else if(player.facing===2)dx=-1;else dy=-1;
+  }
+  const len=Math.hypot(dx,dy)||1;
+  player.vx=(dx/len)*9;player.vy=(dy/len)*9;
+  player.dashT=12;player.dashCd=55;
+  player.inv=18;
+  for(let i=0;i<6;i++)particles.push({x:player.x+player.w/2,y:player.y+player.h/2,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,life:15,color:'#67e8f9'});
+}
+function doInteract(){
+  // Carriages
+  for(const c of carriages){
+    if(c.stolen)continue;
+    if(dist(player.x+12,player.y+12,c.x+18,c.y+11)<48){
+      c.stolen=1;player.mounted=1;player.wanted=Math.min(5,player.wanted+2);
+      showMsg('\u00a1Has robado un carruaje m\u00e1gico! Wanted +2');
+      updateHUD();return;
+    }
+  }
+  // NPCs
+  for(const n of npcs){
+    if(dist(player.x+12,player.y+12,n.x+9,n.y+9)<40){
+      if(n.quest){
+        n.quest=0;player.gold+=25+Math.floor(Math.random()*20);player.xp+=18;
+        showMsg(`Misi\u00f3n de ${n.name}: +oro +XP`);
+        checkLevel();
+      }else{
+        const g=Math.min(n.gold,10+Math.floor(Math.random()*18));
+        n.gold-=g;player.gold+=g;player.wanted=Math.min(5,player.wanted+(g>12?2:1));
+        showMsg(`\u00a1Robaste ${g} oro a ${n.name}!`);
+        n.vx=(n.x-player.x)*0.12;n.vy=(n.y-player.y)*0.12;n.timer=50;
+        // Alert nearby guards
+        for(const g of guards)if(g.alive&&dist(g.x,g.y,player.x,player.y)<220)g.aggro=1;
+      }
+      updateHUD();return;
+    }
+  }
+  // Buildings
+  for(const b of buildings){
+    const cx=b.x+b.w/2,cy=b.y+b.h/2;
+    if(dist(player.x+12,player.y+12,cx,cy)<60){
+      if(b.name==='Taberna'){
+        if(player.gold>=12){player.gold-=12;player.hp=player.maxHp;player.mana=player.maxMana;showMsg('Taberna: descansaste (-12 oro)');}
+        else showMsg('Necesitas 12 oro para la taberna');
+      }else if(b.name==='Templo'){player.mana=player.maxMana;showMsg('El Templo restaura tu man\u00e1');}
+      else if(b.name==='Castillo Real'){showMsg('\u00a1El Castillo Real! Los guardias te vigilan...');if(player.wanted>0)for(const g of guards)g.aggro=1}
+      else showMsg(`Entraste a ${b.name}`);
+      updateHUD();return;
+    }
+  }
+  showMsg('Nada cerca...');
+}
+function checkLevel(){
+  if(player.xp>=player.level*45){
+    player.xp=0;player.level++;player.maxHp+=18;player.hp=player.maxHp;player.maxMana+=10;player.mana=player.maxMana;
+    showMsg(`\u00a1SUBISTE AL NIVEL ${player.level}!`);
+  }
+}
+function addWanted(n){
+  const prev=player.wanted;
+  player.wanted=Math.min(5,player.wanted+n);
+  if(player.wanted>prev){
+    showMsg(player.wanted>=3?'\u00a1Los caballeros de la corona te persiguen!':'\u00a1Se Wanted activado!');
+    for(const g of guards)if(g.alive)g.aggro=1;
+  }
+  updateHUD();
+}
+
+// ===== UPDATE =====
+function update(){
+  // Movement
+  let spd=player.mounted?player.mountSpd:player.speed;
+  if(player.dashT>0){player.dashT--;tryMove(player,player.vx,player.vy);spd=0}
+  else if(Math.abs(keys.x)>0.05||Math.abs(keys.y)>0.05){
+    const len=Math.hypot(keys.x,keys.y)||1;
+    tryMove(player,(keys.x/len)*spd,(keys.y/len)*spd);
+    if(Math.abs(keys.x)>Math.abs(keys.y))player.facing=keys.x>0?0:2;
+    else player.facing=keys.y>0?1:3;
+  }
+  if(player.dashCd>0)player.dashCd--;
+  if(player.inv>0)player.inv--;
+  // Mana regen
+  if(player.mana<player.maxMana&&Math.random()<0.025){player.mana=Math.min(player.maxMana,player.mana+1);updateHUD()}
+  // Wanted decay
+  if(player.wanted>0&&Math.random()<0.0012){player.wanted--;updateHUD()}
+
+  // NPCs
+  for(const n of npcs){
+    n.timer--;
+    if(n.timer<=0){n.vx=(Math.random()-0.5)*n.spd*2;n.vy=(Math.random()-0.5)*n.spd*2;n.timer=50+Math.random()*90}
+    tryMove(n,n.vx,n.vy);
+  }
+  // Enemies
+  for(const e of enemies){
+    if(!e.alive)continue;
+    e.cd=Math.max(0,e.cd-1);
+    const d=dist(e.x,e.y,player.x,player.y);
+    if(d<190){
+      const a=Math.atan2(player.y-e.y,player.x-e.x);
+      tryMove(e,Math.cos(a)*e.spd,Math.sin(a)*e.spd);
+      if(d<34&&e.cd<=0&&player.inv<=0){
+        player.hp-=e.dmg;player.inv=35;e.cd=48;
+        showMsg(`${e.type==='knight'?'Caballero':'Goblin'} te golpe\u00f3 (-${e.dmg})`);
+        updateHUD();
+        if(player.hp<=0)respawn();
+      }
+    }else{
+      const a=Math.atan2(e.py+Math.sin(Date.now()/900+e.x)*50-e.y,e.px+Math.cos(Date.now()/1100+e.y)*50-e.x);
+      tryMove(e,Math.cos(a)*e.spd*0.45,Math.sin(a)*e.spd*0.45);
+    }
+  }
+  // Guards (Wanted AI)
+  for(const g of guards){
+    if(!g.alive)continue;
+    g.cd=Math.max(0,g.cd-1);
+    const d=dist(g.x,g.y,player.x,player.y);
+    if(player.wanted>0||g.aggro){
+      g.aggro=1;
+      const a=Math.atan2(player.y-g.y,player.x-g.x);
+      tryMove(g,Math.cos(a)*g.spd,Math.sin(a)*g.spd);
+      if(d<36&&g.cd<=0&&player.inv<=0){
+        player.hp-=g.dmg;player.inv=30;g.cd=40;
+        showMsg('\u00a1Guardia real te atac\u00f3!');
+        updateHUD();if(player.hp<=0)respawn();
+      }
+    }else{
+      // idle patrol near castle
+      const a=Math.atan2(28*TILE-g.y+(Math.random()-0.5)*80,42*TILE-g.x+(Math.random()-0.5)*80);
+      tryMove(g,Math.cos(a)*0.6,Math.sin(a)*0.6);
+    }
+  }
+  // Projectiles
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p=projectiles[i];p.x+=p.vx;p.y+=p.vy;p.life--;
+    let hit=0;
+    const check=(list)=>{
+      for(const e of list){
+        if(!e.alive)continue;
+        if(Math.hypot(p.x-(e.x+e.w/2),p.y-(e.y+e.h/2))<16){
+          e.hp-=p.dmg;hit=1;
+          particles.push({x:p.x,y:p.y,vx:0,vy:0,life:18,color:'#f97316'});
+          if(e.hp<=0){
+            e.alive=0;player.xp+=e.type? (e.type==='knight'?28:14):22;player.gold+=e.type?(e.type==='knight'?18:8):12;
+            showMsg('\u00a1Enemigo derrotado!');checkLevel();updateHUD();
+          }
+          break;
+        }
+      }
+    };
+    check(enemies);if(!hit)check(guards);
+    if(hit||p.life<=0)projectiles.splice(i,1);
+  }
+  // Particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.life--;
+    if(p.life<=0)particles.splice(i,1);
+  }
+  // Camera lerp
+  cam.tx=player.x+player.w/2-W/2;
+  cam.ty=player.y+player.h/2-H/2;
+  cam.x+=(cam.tx-cam.x)*0.12;
+  cam.y+=(cam.ty-cam.y)*0.12;
+  cam.x=clamp(cam.x,0,WORLD_W-W);cam.y=clamp(cam.y,0,WORLD_H-H);
+}
+function respawn(){
+  player.hp=0;showMsg('\u00a1Has ca\u00eddo! Respawneando...',2000);
+  setTimeout(()=>{
+    player.hp=player.maxHp;player.mana=player.maxMana;
+    player.x=WORLD_W/2;player.y=WORLD_H/2;player.wanted=Math.max(0,player.wanted-1);
+    player.mounted=0;player.inv=60;
+    for(const c of carriages)c.stolen=0;
+    updateHUD();showMsg('Has vuelto al centro del reino');
+  },1800);
+}
+
+// ===== DRAW =====
+function draw(){
+  ctx.fillStyle='#2d5a27';ctx.fillRect(0,0,W,H);
+  const stx=Math.floor(cam.x/TILE),sty=Math.floor(cam.y/TILE);
+  const etx=Math.ceil((cam.x+W)/TILE),ety=Math.ceil((cam.y+H)/TILE);
+  for(let ty=sty;ty<=ety;ty++){
+    for(let tx=stx;tx<=etx;tx++){
+      if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)continue;
+      const sx=tx*TILE-cam.x,sy=ty*TILE-cam.y;
+      if(isPath(tx,ty)){
+        ctx.fillStyle='#6b7280';ctx.fillRect(sx,sy,TILE,TILE);
+        ctx.fillStyle='#9ca3af';ctx.fillRect(sx+5,sy+5,12,12);ctx.fillRect(sx+22,sy+18,12,12);
+      }else{
+        const v=(tx*13+ty*29)%7;
+        ctx.fillStyle=v===0?'#3d8b3a':v===1?'#347a32':v===2?'#2f6b2d':'#358035';
+        ctx.fillRect(sx,sy,TILE,TILE);
+      }
+    }
+  }
+  // Buildings
+  for(const b of buildings){
+    const sx=b.x-cam.x,sy=b.y-cam.y;
+    if(sx+b.w<-20||sy+b.h<-20||sx>W+20||sy>H+20)continue;
+    ctx.fillStyle=b.color;ctx.fillRect(sx,sy,b.w,b.h);
+    ctx.fillStyle='#1c1917';ctx.fillRect(sx,sy,b.w,10);
+    if(!b.name.includes('Muralla')&&!b.name.includes('Torre')){
+      ctx.fillStyle='#0c0a09';ctx.fillRect(sx+b.w/2-10,sy+b.h-22,20,22);
+    }
+    ctx.fillStyle='#f8fafc';ctx.font='11px system-ui';ctx.textAlign='center';
+    ctx.fillText(b.name,sx+b.w/2,sy-5);
+  }
+  // Trees
+  for(const o of obstacles){
+    if(!o.tree)continue;
+    const sx=o.x-cam.x,sy=o.y-cam.y;
+    if(sx<-30||sy<-30||sx>W||sy>H)continue;
+    ctx.fillStyle='#14532d';ctx.beginPath();ctx.arc(sx+14,sy+12,15,0,6.28);ctx.fill();
+    ctx.fillStyle='#3f2a14';ctx.fillRect(sx+11,sy+18,7,14);
+  }
+  // Carriages
+  for(const c of carriages){
+    if(c.stolen)continue;
+    const sx=c.x-cam.x,sy=c.y-cam.y;
+    ctx.fillStyle=c.color;ctx.fillRect(sx,sy,c.w,c.h);
+    ctx.fillStyle='#1c1917';ctx.fillRect(sx+4,sy+4,8,8);ctx.fillRect(sx+c.w-12,sy+4,8,8);
+    ctx.fillStyle='#fbbf24';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('\u99ac\u8eca',sx+c.w/2,sy-4);
+  }
+  // NPCs
+  for(const n of npcs){
+    const sx=n.x-cam.x,sy=n.y-cam.y;
+    if(sx<-20||sy<-20||sx>W||sy>H)continue;
+    ctx.fillStyle=n.color;ctx.fillRect(sx,sy,n.w,n.h);
+    ctx.fillStyle='#f5cba7';ctx.fillRect(sx+4,sy-7,10,9);
+    if(n.quest){ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(sx+9,sy-12,4,0,6.28);ctx.fill()}
+  }
+  // Enemies
+  for(const e of enemies){
+    if(!e.alive)continue;
+    const sx=e.x-cam.x,sy=e.y-cam.y;
+    if(sx<-20||sy<-20||sx>W||sy>H)continue;
+    ctx.fillStyle=e.color;ctx.fillRect(sx,sy,e.w,e.h);
+    ctx.fillStyle='#fef08a';ctx.fillRect(sx+3,sy+5,4,4);ctx.fillRect(sx+12,sy+5,4,4);
+    ctx.fillStyle='#450a0a';ctx.fillRect(sx,sy-7,e.w,4);
+    ctx.fillStyle='#ef4444';ctx.fillRect(sx,sy-7,e.w*(e.hp/e.maxHp),4);
+  }
+  // Guards
+  for(const g of guards){
+    if(!g.alive)continue;
+    const sx=g.x-cam.x,sy=g.y-cam.y;
+    if(sx<-20||sy<-20||sx>W||sy>H)continue;
+    ctx.fillStyle=g.aggro||player.wanted>0?'#b91c1c':'#1e3a5f';
+    ctx.fillRect(sx,sy,g.w,g.h);
+    ctx.fillStyle='#e2e8f0';ctx.fillRect(sx+4,sy+4,5,5);ctx.fillRect(sx+12,sy+4,5,5);
+    ctx.fillStyle='#450a0a';ctx.fillRect(sx,sy-7,g.w,4);
+    ctx.fillStyle='#f87171';ctx.fillRect(sx,sy-7,g.w*(g.hp/g.maxHp),4);
+  }
+  // Projectiles
+  for(const p of projectiles){
+    const sx=p.x-cam.x,sy=p.y-cam.y;
+    ctx.fillStyle='#f97316';ctx.beginPath();ctx.arc(sx,sy,p.r,0,6.28);ctx.fill();
+    ctx.fillStyle='#fdba74';ctx.beginPath();ctx.arc(sx,sy,p.r*0.45,0,6.28);ctx.fill();
+  }
+  // Particles
+  for(const p of particles){
+    ctx.globalAlpha=p.life/20;
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x-cam.x,p.y-cam.y,5,0,6.28);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  // Player
+  const px=player.x-cam.x,py=player.y-cam.y;
+  if(player.inv>0&&(player.inv&4))ctx.globalAlpha=0.45;
+  ctx.fillStyle=player.mounted?'#c2410c':player.dashT>0?'#22d3ee':'#2563eb';
+  ctx.fillRect(px,py,player.w,player.h);
+  ctx.fillStyle='#f5cba7';ctx.fillRect(px+5,py-9,14,11);
+  ctx.fillStyle='#1e3a5f';ctx.fillRect(px+4,py-12,16,5);
+  if(player.facing===0){ctx.fillStyle='#a855f7';ctx.fillRect(px+player.w,py+8,10,5)}
+  else if(player.facing===2){ctx.fillStyle='#a855f7';ctx.fillRect(px-10,py+8,10,5)}
+  if(player.mounted){ctx.fillStyle='rgba(120,53,15,.75)';ctx.fillRect(px-5,py+player.h-3,player.w+10,12)}
+  ctx.globalAlpha=1;
+
+  // Minimap
+  mctx.fillStyle='rgba(15,23,42,.75)';mctx.fillRect(0,0,90,70);
+  const scx=90/WORLD_W,scy=70/WORLD_H;
+  mctx.fillStyle='#4ade80';mctx.fillRect(0,0,90,70);
+  for(const b of buildings){
+    mctx.fillStyle=b.name.includes('Castillo')?'#94a3b8':'#a16207';
+    mctx.fillRect(b.x*scx,b.y*scy,Math.max(2,b.w*scx),Math.max(2,b.h*scy));
+  }
+  mctx.fillStyle='#ef4444';
+  for(const e of enemies)if(e.alive)mctx.fillRect(e.x*scx,e.y*scy,2,2);
+  mctx.fillStyle='#fbbf24';mctx.fillRect(player.x*scx-2,player.y*scy-2,4,4);
+}
+
+// ===== LOOP =====
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(33,now-last);last=now;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+updateHUD();
+showMsg('\u00a1Bienvenido al Reino Isekai! Roba, pelea, explora. Joystick + botones.',3500);
+requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>

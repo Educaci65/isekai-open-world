@@ -1,37 +1,34 @@
-# Isekai Open World ⚔️
+# Isekai Open World — Dios Edition ⚔️
 
-Juego web de mundo abierto estilo GTA pero en fantasía isekai (reencarnación mágica).  
-100% vanilla JavaScript + Canvas 2D. Optimizado para móviles con controles táctiles nativos.
+Juego web isekai de mundo abierto estilo GTA fantasía/mágica.  
+**Un solo archivo `index.html`** (CSS + JS embebidos). 100% vanilla, optimizado para móviles a 60 FPS.
 
 ## Cómo jugar
 
-1. Abre el juego en el navegador (móvil o escritorio).
-2. **Mover**: Usa el pad direccional (▲▼◀▶) o teclas WASD / flechas.
-3. **Robar / Interactuar**: Acércate a NPCs, monturas o edificios y pulsa el botón **¡ROBAR / INTERACTUAR!**  
-   - Roba oro a aldeanos (aumenta el nivel de "Se Busca").  
-   - Roba monturas para ir más rápido.  
-   - Interactúa con Posada (cura), Templo (maná), etc.
-4. **Magia / Ataque**: Pulsa **⚔️ MAGIA** para lanzar proyectiles mágicos (cuesta maná).  
-   Derrota goblins y caballeros corruptos para ganar XP y oro.
-5. Sube de nivel, acumula oro y evita morir (respawneas en el pueblo).
+| Control | Acción |
+|---------|--------|
+| **Joystick virtual** (izquierda) | Movimiento 360° fluido |
+| **🔥 MAGIA** | Dispara proyectiles de fuego |
+| **💰 ROBAR / INTERACT** | Roba NPCs, roba carruajes, entra a edificios, acepta misiones |
+| **💨 DASH** | Esquiva rápida con invulnerabilidad breve |
 
-## Controles de teclado (PC)
-- WASD / Flechas → Mover  
-- E / Espacio → Interactuar / Robar  
-- F / Q → Magia  
+**Teclado (PC):** WASD / flechas · E/Espacio = Interact · F/Q = Magia · Shift/C = Dash
 
 ## Características
-- Perspectiva cenital (top-down) con cámara que sigue al jugador  
-- Mapa grande con colisiones reales (edificios, árboles, murallas)  
-- NPCs, enemigos patrullando, monturas robables  
-- HUD con HP, Maná, Nivel, Oro y estado "Se Busca"  
-- Controles táctiles grandes y cómodos para pulgares  
-- Estilo visual retro 8/16-bit con colores vivos  
 
-## Despliegue (GitHub Pages)
-1. Ve a **Settings → Pages** del repositorio.  
-2. Source: **Deploy from a branch** → Branch `main` → Folder `/ (root)` → Save.  
-3. Espera 1-2 minutos y abre:  
-   `https://educaci65.github.io/isekai-open-world/`
+- Mapa sandbox medieval grande (castillo real, taberna, caminos, bosques, granjas)
+- Cámara suave con lerp que sigue al protagonista
+- Sistema **Se Wanted** (estrellas de la Inquisición) + guardias reales con IA de persecución
+- Carruajes robables (montura + velocidad)
+- NPCs con oro y misiones secundarias
+- Combate en tiempo real con magia de fuego
+- HUD RPG móvil: barras de HP/Maná, nivel, oro, estrellas Wanted, minimapa
+- Mensajes flotantes de log
+- Respawn, subida de nivel, regeneración de maná
 
-¡Disfruta del mundo isekai!
+## GitHub Pages
+
+1. Settings → Pages → Deploy from a branch → `main` / `(root)` → Save  
+2. Juega en: **https://educaci65.github.io/isekai-open-world/**
+
+¡Disfruta del reino!
