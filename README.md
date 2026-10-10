@@ -1,32 +1,29 @@
-# Isekai Open World — Mushoku Edition ⚔️
+# NEON RUSH — Hotline Style
 
-Juego web isekai de mundo abierto estilo GTA + magia de *Mushoku Tensei*.  
-**Un solo `index.html`**. Vanilla JS, 60 FPS en móvil.
+Juego web top-down estilo **Hotline Miami**: acción rápida, un golpe = muerte, combos y sectores.
+
+Todo en un solo `index.html` (Canvas 2D + vanilla JS).
+
+## Cómo jugar
+1. Mata a **todos** los enemigos del sector.
+2. Cuando salga **CLEAR**, entra por la puerta **EXIT**.
+3. Si te tocan → **WASTED**. Reintenta al instante.
 
 ## Controles
-| Control | Acción |
-|---------|--------|
-| **Joystick** | Movimiento 360° |
-| **🔄** | Cambiar tipo de magia |
-| **Botón de magia** | Lanzar el elemento seleccionado |
-| **💰 ROBAR / INTERACT** | Robar, misiones, edificios, carruajes |
-| **💨 DASH** | Esquiva con invulnerabilidad |
+| Móvil | PC |
+|-------|-----|
+| Joystick | WASD / flechas |
+| **HIT** | Espacio / F / click |
+| **FIRE** | Dispara si tienes arma |
 
-**Teclado:** WASD · E/Espacio interact · F/Q magia · Shift/C dash · R/Tab cambiar magia
+## Armas
+- **BAT / KNIFE** — cuerpo a cuerpo
+- **PISTOL / SMG / SHOTGUN** — se recogen del suelo o de enemigos
 
-## Magias (estilo Mushoku Tensei)
-- 🔥 **Fuego** — proyectil clásico
-- 💧 **Agua** — chorro que perfora (hasta 2 enemigos)
-- 🌪️ **Viento** — muy rápido + knockback
-- 🪨 **Tierra** — daño alto + área de impacto
-- ✨ **Curación** — recupera HP
-
-## Novedades de esta versión
-- **Puertas en las murallas** (norte, sur, este, oeste) — ya puedes salir del pueblo
-- Animaciones: bob al caminar, flash de golpe, muerte con partículas, trails de magia, círculo de casteado
-- Sistema de elementos con costes y efectos distintos
-- Mejor feedback visual y de combate
+## Sectores
+LOBBY → CORRIDOR → WAREHOUSE → PENTHOUSE → FINALE
 
 ## Jugar
-Activa GitHub Pages (Settings → Pages → main / root) y abre:  
 **https://educaci65.github.io/isekai-open-world/**
+
+(Si no carga: Settings → Pages → Deploy from **main** / **/ root**)
