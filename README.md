@@ -1,29 +1,23 @@
-# NEON RUSH — Hotline Style
+# NEON RUSH
 
-Juego web top-down estilo **Hotline Miami**: acción rápida, un golpe = muerte, combos y sectores.
+Acción top-down estilo **Hotline Miami** — versión pulida.
 
-Todo en un solo `index.html` (Canvas 2D + vanilla JS).
-
-## Cómo jugar
-1. Mata a **todos** los enemigos del sector.
-2. Cuando salga **CLEAR**, entra por la puerta **EXIT**.
-3. Si te tocan → **WASTED**. Reintenta al instante.
+## Jugar
+https://educaci65.github.io/isekai-open-world/
 
 ## Controles
 | Móvil | PC |
 |-------|-----|
-| Joystick | WASD / flechas |
-| **HIT** | Espacio / F / click |
-| **FIRE** | Dispara si tienes arma |
+| Joystick | WASD |
+| HIT | Click / F / Espacio |
+| FIRE | Disparo (si hay arma) |
+| DASH | Shift / C |
+| Pausa | ⏸ / Esc / P |
 
-## Armas
-- **BAT / KNIFE** — cuerpo a cuerpo
-- **PISTOL / SMG / SHOTGUN** — se recogen del suelo o de enemigos
-
-## Sectores
-LOBBY → CORRIDOR → WAREHOUSE → PENTHOUSE → FINALE
-
-## Jugar
-**https://educaci65.github.io/isekai-open-world/**
-
-(Si no carga: Settings → Pages → Deploy from **main** / **/ root**)
+## Contenido
+- 7 sectores
+- Armas: bat, knife, pistol, SMG, shotgun
+- Combos, score, récord local
+- Máscaras cosméticas
+- Audio sintético (Web Audio)
+- Enemigos melee + tiradores con línea de visión
