@@ -2,6 +2,7 @@
   "use strict";
   var canvas = document.getElementById("c");
   var ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
   var W = 0, H = 0, dpr = 1, frame = 0;
   var TILE = 48;
   var keys = { x: 0, y: 0 };
@@ -10,8 +11,32 @@
   var score = 0, combo = 1, comboTimer = 0, kills = 0, levelIndex = 0, maskId = 0;
   var walls = [], enemies = [], doors = [], pickups = [], bullets = [], particles = [], blood = [], trails = [], dust = [];
   var player = null;
+  var storyMode = false, storyLines = [], storyIdx = 0;
   var MASKS = Sprites.MASKS;
   var WEAPONS = Sprites.WEAPONS;
+
+  var STORY = {
+    intro: [
+      "NOCHE 1 — DISTRITO NEON",
+      "Te despertaste sin memoria.",
+      "Solo una mascara... y una mision.",
+      "Limpia el edificio. No dejes testigos.",
+      "Escondete en las puertas si te descubren."
+    ],
+    levels: [
+      ["SECTOR 01 — LOBBY", "La recepcion esta vigilada.", "Entra. Elimina. Avanza."],
+      ["SECTOR 02 — PASILLOS", "Escuchas radios de guardias.", "Usa las puertas para ocultarte."],
+      ["SECTOR 03 — ALMACEN", "Armas escondidas entre cajas.", "No dispares a ciegas."],
+      ["SECTOR 04 — CLUB", "Musica, luces, sangre.", "El jefe esta cerca."],
+      ["SECTOR 05 — FINAL", "Ultima planta.", "Termina lo que empezaste."]
+    ],
+    ending: [
+      "EDIFICIO LIMPIO.",
+      "La mascara sigue ahi.",
+      "Manana... otro distrito.",
+      "NEON RUSH — FIN"
+    ]
+  };
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -22,6 +47,7 @@
     canvas.style.width = W + "px";
     canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
   }
   window.addEventListener("resize", resize);
   resize();
@@ -51,16 +77,18 @@
     document.getElementById("levelTag").textContent = "SECTOR " + String(levelIndex + 1).padStart(2, "0");
     if (player) {
       var w = WEAPONS[player.weapon];
-      document.getElementById("weaponTag").textContent = w ? (w.name + (w.type === "gun" ? " · " + player.ammo : "")) : "BAT";
+      var tag = w ? (w.name + (w.type === "gun" ? " · " + player.ammo : "")) : "BAT";
+      if (player.hiding) tag = "HIDDEN";
+      document.getElementById("weaponTag").textContent = tag;
     }
   }
 
   var LEVELS = [
-    { name: "LOBBY", map: ["##############","#P...........#","#..###.......#","#..#.#...E...#","#..#.#.......#","#..#.#####...#","#..........E.#","#...E........#","#......###...#","#..S...#.#...#","#......#.....#","#...E........#","#..........D.#","##############"]},
-    { name: "HALLS", map: ["##################","#P...............#","#.####.####.####.#","#.#..#.#..#.#..#.#","#.#E.#.#S.#.#E.#.#","#.#..#.#..#.#..#.#","#....E.....E.....#","#.####.####.####.#","#................#","#..E...S...E.....#","#..............D.#","##################"]},
-    { name: "STORAGE", map: ["####################","#P.................#","#..##..##..##......#","#..##..##..##......#","#.......E..........#","#..E.........S.....#","#......####........#","#......#..#...E....#","#..S...#..#........#","#......####........#","#..............E...#","#..E.....S.........#","#................D.#","####################"]},
-    { name: "CLUB", map: ["######################","#P....................#","#..##.E.##.E.##.S.....#","#..##...##...##.......#","#.....................#","#.S...#######...E.....#","#.....#.....#.........#","#..E..#..S..#.....E...#","#.....#.....#.........#","#.....#######...S.....#","#.....................#","#..##...##.E.##.......#","#..##.E.##...##.....D.#","######################"]},
-    { name: "FINALE", map: ["########################","#P......................#","#..##.E.##.E.##.S.##....#","#..##...##...##...##....#","#.......................#","#.S...#########...E.....#","#.....#.......#.........#","#..E..#...S...#......E..#","#.....#.......#.........#","#.....#########...S.....#","#.......................#","#..##...##.S.##...##....#","#..##.E.##...##.E.##..D.#","########################"]}
+    { name: "LOBBY", map: ["##############","#P...........#","#..###.......#","#..#.#...E...#","#..#H#.......#","#..#.#####...#","#..........E.#","#...E........#","#......###...#","#..S...#H#...#","#......#.....#","#...E........#","#..........D.#","##############"]},
+    { name: "HALLS", map: ["##################","#P...............#","#.####.####.####.#","#.#..#.#H.#.#..#.#","#.#E.#.#S.#.#E.#.#","#.#..#.#..#.#..#.#","#....E.....E.....#","#.####.####.####.#","#................#","#..E...S...E.....#","#.......H......D.#","##################"]},
+    { name: "STORAGE", map: ["####################","#P.................#","#..##..##..##......#","#..##..##..##......#","#.......E..........#","#..E.........S.....#","#......####........#","#......#H.#...E....#","#..S...#..#........#","#......####........#","#..............E...#","#..E.....S....H....#","#................D.#","####################"]},
+    { name: "CLUB", map: ["######################","#P....................#","#..##.E.##.E.##.S.....#","#..##...##...##.......#","#.....................#","#.S...#######...E.....#","#.....#..H..#.........#","#..E..#..S..#.....E...#","#.....#.....#.........#","#.....#######...S.....#","#.....................#","#..##...##.E.##...H...#","#..##.E.##...##.....D.#","######################"]},
+    { name: "FINALE", map: ["########################","#P......................#","#..##.E.##.E.##.S.##....#","#..##...##...##...##....#","#.......................#","#.S...#########...E.....#","#.....#...H...#.........#","#..E..#...S...#......E..#","#.....#.......#.........#","#.....#########...S.....#","#.......................#","#..##...##.S.##...##.H..#","#..##.E.##...##.E.##..D.#","########################"]}
   ];
 
   function makeEnemy(x, y, type) {
@@ -89,19 +117,20 @@
         else if (c === "P") { spawn.x = wx + TILE / 2; spawn.y = wy + TILE / 2; }
         else if (c === "E") enemies.push(makeEnemy(wx + TILE / 2, wy + TILE / 2, "melee"));
         else if (c === "S") enemies.push(makeEnemy(wx + TILE / 2, wy + TILE / 2, "shooter"));
-        else if (c === "D") doors.push({ x: wx, y: wy, w: TILE, h: TILE });
+        else if (c === "D") doors.push({ x: wx, y: wy, w: TILE, h: TILE, exit: true, hideSpot: false });
+        else if (c === "H") doors.push({ x: wx, y: wy, w: TILE, h: TILE, exit: false, hideSpot: true });
       }
     }
     if (idx >= 1) pickups.push({ x: spawn.x + TILE * 2, y: spawn.y, weapon: "pistol", ammo: 10 });
     player = {
-      x: spawn.x, y: spawn.y, r: 15, speed: 3.8,
+      x: spawn.x, y: spawn.y, r: 14, speed: 3.6,
       weapon: "bat", ammo: 0, atkCd: 0, atkT: 0,
       dashCd: 0, dashT: 0, vx: 0, vy: 0,
-      alive: true, inv: 0, walk: 0, angle: 0, muzzle: 0
+      alive: true, inv: 0, walk: 0, angle: 0, muzzle: 0,
+      hiding: false, hideDoor: null
     };
     dead = false; levelClear = false; combo = 1; comboTimer = 0; shake = 0;
     updateHUD();
-    showMsg(L.name, "ELIMINA A TODOS", 2000);
   }
 
   function solidCircle(x, y, r) {
@@ -115,6 +144,7 @@
     if (!levelClear) {
       for (i = 0; i < doors.length; i++) {
         o = doors[i];
+        if (o.hideSpot) continue;
         cx = clamp(x, o.x, o.x + o.w);
         cy = clamp(y, o.y, o.y + o.h);
         if (Math.hypot(x - cx, y - cy) < r) return true;
@@ -143,17 +173,53 @@
     return false;
   }
 
+  function nearestHideDoor() {
+    if (!player) return null;
+    var best = null, bestD = 36, i, d, dd;
+    for (i = 0; i < doors.length; i++) {
+      d = doors[i];
+      if (!d.hideSpot) continue;
+      dd = dist(player.x, player.y, d.x + d.w / 2, d.y + d.h / 2);
+      if (dd < bestD) { bestD = dd; best = d; }
+    }
+    return best;
+  }
+
+  function toggleHide() {
+    if (!player || !player.alive || player.dashT > 0) return;
+    if (player.hiding) {
+      player.hiding = false;
+      player.hideDoor = null;
+      player.inv = 8;
+      showMsg("SALISTE", "", 800);
+      updateHUD();
+      return;
+    }
+    var d = nearestHideDoor();
+    if (!d) {
+      showMsg("SIN CUBIERTA", "Acercate a una puerta HIDE", 1200);
+      return;
+    }
+    player.hiding = true;
+    player.hideDoor = d;
+    player.x = d.x + d.w / 2;
+    player.y = d.y + d.h / 2;
+    player.vx = 0; player.vy = 0;
+    showMsg("ESCONDIDO", "Toca HIT para salir", 1200);
+    updateHUD();
+  }
+
   function sprayBlood(x, y, n) {
     var i, a, sp;
     for (i = 0; i < (n || 14); i++) {
       a = Math.random() * 6.28;
       sp = 1.5 + Math.random() * 5;
-      blood.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 35 + Math.random() * 25, s: 2 + Math.random() * 4 });
+      blood.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 35 + Math.random() * 25, s: 2 + Math.random() * 3 });
     }
   }
 
   function spawnDust(x, y) {
-    dust.push({ x: x + (Math.random() - 0.5) * 8, y: y + (Math.random() - 0.5) * 8, life: 12 + Math.random() * 8, s: 2 + Math.random() * 3 });
+    dust.push({ x: x + (Math.random() - 0.5) * 8, y: y + (Math.random() - 0.5) * 8, life: 12 + Math.random() * 8, s: 2 + Math.random() * 2 });
   }
 
   function killEnemy(e) {
@@ -165,10 +231,10 @@
     combo = Math.min(combo + 1, 15);
     score += 100 * combo;
     shake = 8;
-    sprayBlood(e.x, e.y, 18);
+    sprayBlood(e.x, e.y, 16);
     var i;
-    for (i = 0; i < 8; i++) {
-      particles.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 18, color: "#ff286e", s: 3 });
+    for (i = 0; i < 6; i++) {
+      particles.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 16, color: "#ff286e", s: 2 });
     }
     if (e.weapon !== "bat") pickups.push({ x: e.x, y: e.y, weapon: e.weapon, ammo: e.ammo || 8 });
     updateHUD();
@@ -177,17 +243,18 @@
     if (left === 0) {
       levelClear = true;
       score += 500;
-      showMsg("CLEAR", "TOCA LA PUERTA EXIT", 2500);
+      showMsg("CLEAR", "Ve a la puerta EXIT", 2500);
       updateHUD();
     }
   }
 
   function doMelee() {
     if (!player || !player.alive || player.atkCd > 0 || player.dashT > 0) return;
+    if (player.hiding) { toggleHide(); return; }
     var melee = WEAPONS[player.weapon] && WEAPONS[player.weapon].type === "melee" ? WEAPONS[player.weapon] : WEAPONS.bat;
     player.atkCd = melee.cd;
     player.atkT = 12;
-    var i, e, d, diff;
+    var i, e, d, diff, any = false;
     for (i = 0; i < enemies.length; i++) {
       e = enemies[i];
       if (!e.alive) continue;
@@ -199,25 +266,30 @@
       if (Math.abs(diff) < melee.arc) {
         killEnemy(e);
         e.hitFlash = 8;
+        any = true;
       }
+    }
+    if (!any) {
+      var hd = nearestHideDoor();
+      if (hd) toggleHide();
     }
   }
 
   function doShoot() {
-    if (!player || !player.alive || player.atkCd > 0 || player.dashT > 0) return;
+    if (!player || !player.alive || player.atkCd > 0 || player.dashT > 0 || player.hiding) return;
     var w = WEAPONS[player.weapon];
     if (!w || w.type !== "gun") { doMelee(); return; }
     if (player.ammo <= 0) { showMsg("SIN BALAS", "", 1000); return; }
     player.atkCd = w.cd;
     player.atkT = 6;
     player.ammo--;
-    player.muzzle = 6;
+    player.muzzle = 5;
     var n = w.pellets || 1, i, a;
     for (i = 0; i < n; i++) {
       a = player.angle + (Math.random() - 0.5) * (w.spread || 0.04) * 2;
       bullets.push({
-        x: player.x + Math.cos(a) * 18,
-        y: player.y + Math.sin(a) * 18,
+        x: player.x + Math.cos(a) * 16,
+        y: player.y + Math.sin(a) * 16,
         vx: Math.cos(a) * w.spd,
         vy: Math.sin(a) * w.spd,
         life: Math.ceil(w.range / w.spd),
@@ -230,7 +302,7 @@
   }
 
   function doDash() {
-    if (!player || !player.alive || player.dashCd > 0 || player.dashT > 0) return;
+    if (!player || !player.alive || player.dashCd > 0 || player.dashT > 0 || player.hiding) return;
     var dx = keys.x, dy = keys.y;
     if (Math.hypot(dx, dy) < 0.15) {
       dx = Math.cos(player.angle);
@@ -257,11 +329,12 @@
     joyKnob.style.transform = "translate(calc(-50% + " + jx + "px), calc(-50% + " + jy + "px))";
     keys.x = jx / JOY_R;
     keys.y = jy / JOY_R;
-    if (len > 8 && player) player.angle = Math.atan2(dy, dx);
+    if (len > 8 && player && !player.hiding) player.angle = Math.atan2(dy, dx);
   }
 
   joyZone.addEventListener("touchstart", function (e) {
     e.preventDefault();
+    if (storyMode) { advanceStory(); return; }
     var t = e.changedTouches[0];
     joyId = t.identifier;
     var r = joyBase.getBoundingClientRect();
@@ -298,7 +371,11 @@
 
   function bindBtn(id, fn) {
     var el = document.getElementById(id);
-    el.addEventListener("touchstart", function (e) { e.preventDefault(); fn(); }, { passive: false });
+    el.addEventListener("touchstart", function (e) {
+      e.preventDefault();
+      if (storyMode) { advanceStory(); return; }
+      fn();
+    }, { passive: false });
   }
   bindBtn("btnHit", doMelee);
   bindBtn("btnFire", doShoot);
@@ -313,21 +390,58 @@
     }, { passive: false });
   });
 
+  function startStory(lines, onDone) {
+    storyMode = true;
+    storyLines = lines;
+    storyIdx = 0;
+    storyMode._onDone = onDone;
+    showStoryLine();
+  }
+
+  function showStoryLine() {
+    if (storyIdx >= storyLines.length) {
+      storyMode = false;
+      document.getElementById("mainMsg").classList.remove("show");
+      document.getElementById("subMsg").classList.remove("show");
+      if (storyMode._onDone) storyMode._onDone();
+      return;
+    }
+    var line = storyLines[storyIdx];
+    var a = document.getElementById("mainMsg");
+    var b = document.getElementById("subMsg");
+    a.textContent = line;
+    b.textContent = storyIdx < storyLines.length - 1 ? "toca para continuar" : "toca para empezar";
+    a.classList.add("show");
+    b.classList.add("show");
+  }
+
+  function advanceStory() {
+    if (!storyMode) return;
+    storyIdx++;
+    showStoryLine();
+  }
+
   function startGame() {
     document.getElementById("overlay").classList.add("hidden");
     levelIndex = 0;
     score = 0;
     kills = 0;
-    buildLevel(0);
-    running = true;
+    startStory(STORY.intro, function () {
+      buildLevel(0);
+      startStory(STORY.levels[0], function () {
+        running = true;
+      });
+    });
   }
 
   document.getElementById("btnStart").addEventListener("touchstart", function (e) {
     e.preventDefault();
+    if (storyMode) { advanceStory(); return; }
     startGame();
   }, { passive: false });
 
   document.getElementById("btnStart").addEventListener("click", function () {
+    if (storyMode) { advanceStory(); return; }
     if (dead) {
       document.getElementById("overlay").classList.add("hidden");
       document.getElementById("btnStart").textContent = "JUGAR";
@@ -338,12 +452,20 @@
     } else startGame();
   });
 
+  canvas.addEventListener("touchstart", function (e) {
+    if (storyMode) {
+      e.preventDefault();
+      advanceStory();
+    }
+  }, { passive: false });
+
   function die() {
     if (dead || !player || !player.alive) return;
+    if (player.hiding) return;
     player.alive = false;
     dead = true;
     running = false;
-    sprayBlood(player.x, player.y, 28);
+    sprayBlood(player.x, player.y, 24);
     shake = 14;
     showMsg("WASTED", "", 1500);
     setTimeout(function () {
@@ -351,7 +473,7 @@
       ov.classList.remove("hidden");
       ov.querySelector("h1").textContent = "WASTED";
       ov.querySelector(".tag").textContent = "SECTOR " + String(levelIndex + 1).padStart(2, "0");
-      ov.querySelector("p").innerHTML = "Score " + (score | 0) + " · Kills " + kills;
+      ov.querySelector("p").innerHTML = "Score " + (score | 0) + " · Kills " + kills + "<br>Las puertas HIDE te protegen";
       document.getElementById("btnStart").textContent = "REINTENTAR";
     }, 600);
   }
@@ -360,18 +482,23 @@
     levelIndex++;
     if (levelIndex >= LEVELS.length) {
       running = false;
-      var ov = document.getElementById("overlay");
-      ov.classList.remove("hidden");
-      ov.querySelector("h1").textContent = "COMPLETADO";
-      ov.querySelector("p").innerHTML = "Score " + (score | 0);
-      document.getElementById("btnStart").textContent = "OTRA VEZ";
+      startStory(STORY.ending, function () {
+        var ov = document.getElementById("overlay");
+        ov.classList.remove("hidden");
+        ov.querySelector("h1").textContent = "COMPLETADO";
+        ov.querySelector("p").innerHTML = "Score " + (score | 0);
+        document.getElementById("btnStart").textContent = "OTRA VEZ";
+      });
       return;
     }
     buildLevel(levelIndex);
+    startStory(STORY.levels[levelIndex] || ["SECTOR " + (levelIndex + 1)], function () {
+      running = true;
+    });
   }
 
   function update() {
-    if (!running || !player || !player.alive) return;
+    if (storyMode || !running || !player || !player.alive) return;
     frame++;
     if (shake > 0) shake *= 0.85;
     if (comboTimer > 0) {
@@ -384,11 +511,16 @@
     if (player.inv > 0) player.inv--;
     if (player.muzzle > 0) player.muzzle--;
 
-    if (player.dashT > 0) {
+    if (player.hiding) {
+      if (player.hideDoor) {
+        player.x = player.hideDoor.x + player.hideDoor.w / 2;
+        player.y = player.hideDoor.y + player.hideDoor.h / 2;
+      }
+    } else if (player.dashT > 0) {
       player.dashT--;
       tryMove(player, player.vx, player.vy);
       player.walk += 0.55;
-      trails.push({ x: player.x, y: player.y, a: player.angle, life: 10, m: maskId });
+      trails.push({ x: player.x, y: player.y, a: player.angle, life: 8, m: maskId });
       spawnDust(player.x, player.y);
     } else {
       var mx = keys.x, my = keys.y, len = Math.hypot(mx, my);
@@ -402,7 +534,7 @@
         player.walk *= 0.9;
       }
     }
-    if (trails.length > 16) trails.shift();
+    if (trails.length > 14) trails.shift();
 
     var i, p, e, d, a, canSee, j, b, w;
     for (i = trails.length - 1; i >= 0; i--) {
@@ -414,19 +546,22 @@
       if (dust[i].life <= 0) dust.splice(i, 1);
     }
 
-    for (i = pickups.length - 1; i >= 0; i--) {
-      p = pickups[i];
-      if (dist(player.x, player.y, p.x, p.y) < 26) {
-        player.weapon = p.weapon;
-        player.ammo = p.ammo || WEAPONS[p.weapon].ammo || 0;
-        pickups.splice(i, 1);
-        showMsg(WEAPONS[p.weapon].name, "", 900);
-        updateHUD();
+    if (!player.hiding) {
+      for (i = pickups.length - 1; i >= 0; i--) {
+        p = pickups[i];
+        if (dist(player.x, player.y, p.x, p.y) < 26) {
+          player.weapon = p.weapon;
+          player.ammo = p.ammo || WEAPONS[p.weapon].ammo || 0;
+          pickups.splice(i, 1);
+          showMsg(WEAPONS[p.weapon].name, "", 900);
+          updateHUD();
+        }
       }
     }
 
-    if (levelClear) {
+    if (levelClear && !player.hiding) {
       for (i = 0; i < doors.length; i++) {
+        if (!doors[i].exit) continue;
         if (dist(player.x, player.y, doors[i].x + doors[i].w / 2, doors[i].y + doors[i].h / 2) < 40) {
           nextLevel();
           return;
@@ -445,10 +580,11 @@
       e.cd = Math.max(0, e.cd - 1);
       e.timer--;
       d = dist(e.x, e.y, player.x, player.y);
-      canSee = d < 220 && !lineBlocked(e.x, e.y, player.x, player.y);
+      canSee = !player.hiding && d < 220 && !lineBlocked(e.x, e.y, player.x, player.y);
       if (canSee) e.alert = 120;
       if (e.alert > 0) e.alert--;
-      if (e.alert > 0 || canSee) {
+
+      if ((e.alert > 0 || canSee) && !player.hiding) {
         a = Math.atan2(player.y - e.y, player.x - e.x);
         e.angle = a;
         if (e.type === "shooter" && d < 90) tryMove(e, -Math.cos(a) * e.speed, -Math.sin(a) * e.speed);
@@ -515,7 +651,7 @@
             break;
           }
         }
-      } else if (player.inv <= 0 && Math.hypot(b.x - player.x, b.y - player.y) < player.r + 2) {
+      } else if (!player.hiding && player.inv <= 0 && Math.hypot(b.x - player.x, b.y - player.y) < player.r + 2) {
         bullets.splice(i, 1);
         die();
         return;
@@ -548,13 +684,14 @@
       cx += (Math.random() - 0.5) * shake * 2;
       cy += (Math.random() - 0.5) * shake * 2;
     }
-    return { x: cx, y: cy };
+    return { x: Math.round(cx), y: Math.round(cy) };
   }
 
   function draw() {
     var cam = getCam();
     var i, sx, sy, e, b, p, d, t, m;
 
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#0a0a12";
     ctx.fillRect(0, 0, W, H);
 
@@ -563,26 +700,22 @@
     var x1 = Math.ceil((cam.x + W) / ts) + 1, y1 = Math.ceil((cam.y + H) / ts) + 1;
     for (ty = y0; ty <= y1; ty++) {
       for (tx = x0; tx <= x1; tx++) {
-        ctx.fillStyle = ((tx + ty) & 1) ? "#14141e" : "#101018";
+        ctx.fillStyle = ((tx + ty) & 1) ? "#12121c" : "#0e0e16";
         ctx.fillRect(tx * ts - cam.x, ty * ts - cam.y, ts, ts);
       }
     }
 
     for (i = 0; i < dust.length; i++) {
       p = dust[i];
-      ctx.globalAlpha = (p.life / 16) * 0.35;
-      ctx.fillStyle = "#888";
-      ctx.beginPath();
-      ctx.arc(p.x - cam.x, p.y - cam.y, p.s, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.globalAlpha = (p.life / 16) * 0.3;
+      ctx.fillStyle = "#666";
+      ctx.fillRect(Math.round(p.x - cam.x), Math.round(p.y - cam.y), 2, 2);
     }
     for (i = 0; i < blood.length; i++) {
       p = blood[i];
-      ctx.globalAlpha = clamp(p.life / 40, 0.15, 0.75);
+      ctx.globalAlpha = clamp(p.life / 40, 0.15, 0.7);
       ctx.fillStyle = "#8b0018";
-      ctx.beginPath();
-      ctx.arc(p.x - cam.x, p.y - cam.y, p.s, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(Math.round(p.x - cam.x), Math.round(p.y - cam.y), Math.max(2, p.s | 0), Math.max(2, p.s | 0));
     }
     ctx.globalAlpha = 1;
 
@@ -596,22 +729,24 @@
 
     for (i = 0; i < doors.length; i++) {
       d = doors[i];
-      Sprites.drawDoor(ctx, d.x - cam.x, d.y - cam.y, d.w, d.h, levelClear);
+      sx = d.x - cam.x;
+      sy = d.y - cam.y;
+      if (d.exit) {
+        Sprites.drawDoor(ctx, sx, sy, d.w, d.h, levelClear, false);
+      } else {
+        var near = player && dist(player.x, player.y, d.x + d.w / 2, d.y + d.h / 2) < 40;
+        Sprites.drawDoor(ctx, sx, sy, d.w, d.h, false, near && !player.hiding);
+      }
     }
 
     for (i = 0; i < pickups.length; i++) {
       p = pickups[i];
-      sx = p.x - cam.x;
-      sy = p.y - cam.y + Math.sin(frame * 0.15 + i) * 4;
-      ctx.save();
-      ctx.translate(sx, sy);
-      ctx.rotate(frame * 0.06);
+      sx = Math.round(p.x - cam.x);
+      sy = Math.round(p.y - cam.y + Math.sin(frame * 0.12 + i) * 3);
       ctx.fillStyle = WEAPONS[p.weapon] ? WEAPONS[p.weapon].color : "#fff";
-      ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 10;
-      ctx.fillRect(-7, -7, 14, 14);
-      ctx.shadowBlur = 0;
-      ctx.restore();
+      ctx.fillRect(sx - 5, sy - 5, 10, 10);
+      ctx.fillStyle = "#0a0a12";
+      ctx.fillRect(sx - 3, sy - 3, 6, 6);
     }
 
     for (i = 0; i < trails.length; i++) {
@@ -620,7 +755,7 @@
       m = MASKS[t.m || 0];
       Sprites.drawChar(ctx, t.x - cam.x, t.y - cam.y, t.a, {
         col: m, eye: m.eye, walk: 0, atkT: 0, weapon: null,
-        alpha: (t.life / 10) * 0.3, scale: 0.95
+        alpha: (t.life / 8) * 0.25, pixelScale: 2
       });
     }
 
@@ -629,30 +764,28 @@
       if (!e.alive) {
         if (e.deadT > 0) {
           Sprites.drawChar(ctx, e.x - cam.x, e.y - cam.y, e.angle, {
-            col: { body: "#666", jacket: "#444", mask: "#222", accent: "#333" },
-            eye: "#400", walk: 0, weapon: null, alpha: e.deadT / 22, scale: 1
+            col: { body: "#555", jacket: "#333", mask: "#222", accent: "#222", shoe: "#111" },
+            eye: "#400", walk: 0, weapon: null, alpha: e.deadT / 22, pixelScale: 2
           });
         }
         continue;
       }
       Sprites.drawChar(ctx, e.x - cam.x, e.y - cam.y, e.angle, {
         col: {
-          body: "#d0a090",
+          body: "#c8a090",
           jacket: e.type === "shooter" ? "#a02028" : "#701818",
           mask: "#1a1010",
-          accent: "#c04040"
+          accent: "#c04040",
+          shoe: "#0a0a10"
         },
         eye: e.alert > 0 ? "#ff286e" : "#ff8866",
-        walk: e.walk, atkT: e.atkT, weapon: e.weapon, flash: e.hitFlash
+        walk: e.walk, atkT: e.atkT, weapon: e.weapon, flash: e.hitFlash, pixelScale: 2
       });
-      if (e.alert > 0) {
+      if (e.alert > 0 && !player.hiding) {
         ctx.fillStyle = "#ff286e";
-        ctx.font = "bold 16px system-ui";
+        ctx.font = "bold 14px monospace";
         ctx.textAlign = "center";
-        ctx.shadowColor = "#ff286e";
-        ctx.shadowBlur = 8;
-        ctx.fillText("!", e.x - cam.x, e.y - cam.y - 24);
-        ctx.shadowBlur = 0;
+        ctx.fillText("!", Math.round(e.x - cam.x), Math.round(e.y - cam.y - 20));
       }
     }
 
@@ -661,52 +794,34 @@
       var alpha = (player.inv > 0 && (player.inv & 2)) ? 0.35 : 1;
       Sprites.drawChar(ctx, player.x - cam.x, player.y - cam.y, player.angle, {
         col: m, eye: m.eye, walk: player.walk, atkT: player.atkT,
-        weapon: player.weapon, alpha: alpha
+        weapon: player.weapon, alpha: alpha, hide: player.hiding, pixelScale: 2
       });
-      if (player.muzzle > 0) {
-        var mx = player.x - cam.x + Math.cos(player.angle) * 30;
-        var my = player.y - cam.y + Math.sin(player.angle) * 30;
+      if (player.muzzle > 0 && !player.hiding) {
+        var mx = Math.round(player.x - cam.x + Math.cos(player.angle) * 28);
+        var my = Math.round(player.y - cam.y + Math.sin(player.angle) * 28);
         ctx.fillStyle = "#fff8a0";
-        ctx.shadowColor = "#ffaa00";
-        ctx.shadowBlur = 12;
-        ctx.beginPath();
-        ctx.arc(mx, my, 4 + player.muzzle, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.fillRect(mx - 3, my - 3, 6, 6);
       }
-      ctx.strokeStyle = "rgba(0,245,255,0.35)";
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(player.x - cam.x + Math.cos(player.angle) * 20, player.y - cam.y + Math.sin(player.angle) * 20);
-      ctx.lineTo(player.x - cam.x + Math.cos(player.angle) * 40, player.y - cam.y + Math.sin(player.angle) * 40);
-      ctx.stroke();
-      ctx.setLineDash([]);
     }
 
     for (i = 0; i < bullets.length; i++) {
       b = bullets[i];
       ctx.fillStyle = b.color;
-      ctx.shadowColor = b.color;
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(b.x - cam.x, b.y - cam.y, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.4;
-      ctx.beginPath();
-      ctx.arc(b.x - cam.x - b.vx * 0.8, b.y - cam.y - b.vy * 0.8, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
+      ctx.fillRect(Math.round(b.x - cam.x) - 2, Math.round(b.y - cam.y) - 2, 4, 4);
     }
 
     for (i = 0; i < particles.length; i++) {
       p = particles[i];
-      ctx.globalAlpha = p.life / 18;
+      ctx.globalAlpha = p.life / 16;
       ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - cam.x, p.y - cam.y, p.s, p.s);
+      ctx.fillRect(Math.round(p.x - cam.x), Math.round(p.y - cam.y), 2, 2);
     }
     ctx.globalAlpha = 1;
+
+    if (storyMode) {
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(0, 0, W, H);
+    }
   }
 
   function loop() {
