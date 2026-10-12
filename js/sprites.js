@@ -1,20 +1,20 @@
-/* Original pixel-style sprites — Hotline-inspired aesthetic (not official assets) */
+/* 100% pixel-art sprites — original neon arcade style */
 window.Sprites = (function () {
   "use strict";
 
   var MASKS = [
-    { body: "#f0eef5", jacket: "#ff286e", eye: "#00f5ff", mask: "#1a1520", accent: "#ff6b9d" },
-    { body: "#e8f4f5", jacket: "#00c4d4", eye: "#ff286e", mask: "#102028", accent: "#5ef0ff" },
-    { body: "#f5f0e0", jacket: "#e8a020", eye: "#ff4422", mask: "#221810", accent: "#ffcc66" },
-    { body: "#e0e0e8", jacket: "#6b2d9b", eye: "#a0ff60", mask: "#120818", accent: "#c080ff" }
+    { body: "#e8e0f0", jacket: "#ff286e", eye: "#00f5ff", mask: "#1a1520", accent: "#ff6b9d", shoe: "#0a0a10" },
+    { body: "#d8f0f0", jacket: "#00c4d4", eye: "#ff286e", mask: "#102028", accent: "#5ef0ff", shoe: "#0a0a10" },
+    { body: "#f0e8d0", jacket: "#e8a020", eye: "#ff4422", mask: "#221810", accent: "#ffcc66", shoe: "#0a0a10" },
+    { body: "#d8d8e0", jacket: "#6b2d9b", eye: "#a0ff60", mask: "#120818", accent: "#c080ff", shoe: "#0a0a10" }
   ];
 
   var WEAPONS = {
-    bat:     { name: "BAT",     type: "melee", range: 44, arc: 1.6, cd: 12, color: "#ff286e", len: 26 },
-    knife:   { name: "KNIFE",   type: "melee", range: 34, arc: 1.1, cd: 8,  color: "#00f5ff", len: 20 },
-    pistol:  { name: "PISTOL",  type: "gun",   range: 320, cd: 14, ammo: 10, color: "#ffcc00", spread: 0.03, spd: 12, len: 18 },
-    smg:     { name: "SMG",     type: "gun",   range: 280, cd: 5,  ammo: 28, color: "#b47fff", spread: 0.1,  spd: 11, len: 22 },
-    shotgun: { name: "SHOTGUN", type: "gun",   range: 140, cd: 24, ammo: 6,  color: "#ff6622", spread: 0.3,  spd: 10, pellets: 5, len: 24 }
+    bat:     { name: "BAT",     type: "melee", range: 44, arc: 1.6, cd: 12, color: "#ff286e", len: 7 },
+    knife:   { name: "KNIFE",   type: "melee", range: 34, arc: 1.1, cd: 8,  color: "#00f5ff", len: 5 },
+    pistol:  { name: "PISTOL",  type: "gun",   range: 320, cd: 14, ammo: 10, color: "#ffcc00", spread: 0.03, spd: 12, len: 5 },
+    smg:     { name: "SMG",     type: "gun",   range: 280, cd: 5,  ammo: 28, color: "#b47fff", spread: 0.1,  spd: 11, len: 6 },
+    shotgun: { name: "SHOTGUN", type: "gun",   range: 140, cd: 24, ammo: 6,  color: "#ff6622", spread: 0.3,  spd: 10, pellets: 5, len: 7 }
   };
 
   function drawChar(ctx, x, y, angle, opts) {
@@ -26,154 +26,72 @@ window.Sprites = (function () {
     var weapon = opts.weapon;
     var alpha = opts.alpha != null ? opts.alpha : 1;
     var flash = opts.flash || 0;
-    var scale = opts.scale || 1;
+    var hide = opts.hide || false;
+    var s = opts.pixelScale || 2;
     var wp = weapon && WEAPONS[weapon] ? WEAPONS[weapon] : null;
-    var wlen = wp ? wp.len : 22;
-    var wcol = wp ? wp.color : "#ccc";
 
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(Math.round(x), Math.round(y));
     ctx.rotate(angle);
-    ctx.scale(scale, scale);
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = alpha * (hide ? 0.45 : 1);
 
-    ctx.fillStyle = "rgba(0,0,0,0.42)";
-    ctx.save();
-    ctx.translate(1, 5);
-    ctx.scale(1, 0.5);
-    ctx.beginPath();
-    ctx.arc(0, 0, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    var jacket = flash > 0 ? "#ffffff" : col.jacket;
+    var maskC = flash > 0 ? "#ffffff" : col.mask;
+    var body = col.body;
+    var phase = walk * 1.2;
+    var legL = Math.round(Math.sin(phase) * 2);
+    var legR = Math.round(Math.sin(phase + Math.PI) * 2);
+    var atkSwing = atk > 0 ? Math.sin((1 - atk / 12) * Math.PI) * 0.9 : 0;
 
-    var phase = walk * 1.15;
-    var Lleg = Math.sin(phase) * 6;
-    var Rleg = Math.sin(phase + Math.PI) * 6;
-    var Lkick = Math.cos(phase) * 3.2;
-    var Rkick = Math.cos(phase + Math.PI) * 3.2;
+    function pr(px, py, pw, ph, c) {
+      ctx.fillStyle = c;
+      ctx.fillRect(Math.floor(px) * s, Math.floor(py) * s, Math.floor(pw) * s, Math.floor(ph) * s);
+    }
 
-    ctx.fillStyle = "#1a1a24";
-    ctx.beginPath();
-    ctx.moveTo(-5, 2);
-    ctx.lineTo(-7.5 + Lkick, 11 + Lleg);
-    ctx.lineTo(-1.5 + Lkick, 11 + Lleg);
-    ctx.lineTo(-1, 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(1, 2);
-    ctx.lineTo(1.5 + Rkick, 11 + Rleg);
-    ctx.lineTo(7.5 + Rkick, 11 + Rleg);
-    ctx.lineTo(5, 2);
-    ctx.fill();
+    ctx.globalAlpha = alpha * 0.35 * (hide ? 0.5 : 1);
+    pr(-4, 3, 8, 3, "#000000");
+    ctx.globalAlpha = alpha * (hide ? 0.45 : 1);
 
-    ctx.fillStyle = "#0a0a12";
-    ctx.fillRect(-8.5 + Lkick, 10 + Lleg, 7, 3.5);
-    ctx.fillRect(1.5 + Rkick, 10 + Rleg, 7, 3.5);
+    pr(-3, 2 + legL, 2, 3, "#1a1a24");
+    pr(1, 2 + legR, 2, 3, "#1a1a24");
+    pr(-3, 4 + legL, 2, 1, col.shoe || "#0a0a10");
+    pr(1, 4 + legR, 2, 1, col.shoe || "#0a0a10");
 
-    ctx.fillStyle = flash > 0 ? "#ffffff" : col.jacket;
-    ctx.beginPath();
-    ctx.moveTo(-12, -2);
-    ctx.quadraticCurveTo(-13, 7, -9, 11);
-    ctx.lineTo(9, 11);
-    ctx.quadraticCurveTo(13, 7, 12, -2);
-    ctx.quadraticCurveTo(9, -9, 0, -10);
-    ctx.quadraticCurveTo(-9, -9, -12, -2);
-    ctx.fill();
+    pr(-4, -2, 8, 5, jacket);
+    pr(-5, -1, 2, 2, body);
+    pr(3, -1, 2, 2, body);
+    pr(-2, -2, 4, 1, col.accent || jacket);
 
-    ctx.fillStyle = col.accent || col.jacket;
-    ctx.globalAlpha = alpha * 0.55;
-    ctx.beginPath();
-    ctx.moveTo(-6.5, -6.5);
-    ctx.lineTo(0, -9);
-    ctx.lineTo(6.5, -6.5);
-    ctx.lineTo(4.5, -3);
-    ctx.lineTo(-4.5, -3);
-    ctx.fill();
-    ctx.globalAlpha = alpha;
+    pr(-3, -5, 6, 4, maskC);
+    pr(-3, -5, 6, 1, col.accent || "#333");
 
-    var armSwing = Math.sin(phase) * 4.5;
-    var atkSwing = atk > 0 ? Math.sin((1 - atk / 12) * Math.PI) * 1.15 : 0;
-    ctx.fillStyle = col.body;
-    ctx.beginPath();
-    ctx.arc(-11, -1 + armSwing * 0.35, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(11, -1 - armSwing * 0.35, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = flash > 0 ? "#ffffff" : col.mask;
-    ctx.beginPath();
-    ctx.arc(0, -3.5, 10.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = col.accent || "#333";
-    ctx.lineWidth = 1.3;
-    ctx.beginPath();
-    ctx.arc(0, -3.5, 10.2, 0.25, Math.PI - 0.25);
-    ctx.stroke();
-
-    ctx.fillStyle = eye;
-    ctx.shadowColor = eye;
-    ctx.shadowBlur = 9;
-    ctx.beginPath();
-    ctx.arc(-3.8, -4, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(3.8, -4, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle = "#0a0a12";
-    ctx.beginPath();
-    ctx.arc(-3.8, -4, 1.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(3.8, -4, 1.3, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(-4.4, -4.6, 0.9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(3.2, -4.6, 0.9, 0, Math.PI * 2);
-    ctx.fill();
+    pr(-2, -4, 1, 1, eye);
+    pr(1, -4, 1, 1, eye);
 
     ctx.save();
     ctx.rotate(atkSwing);
-    ctx.strokeStyle = wcol;
-    ctx.lineWidth = 3.8;
-    ctx.lineCap = "round";
-    ctx.shadowColor = wcol;
-    ctx.shadowBlur = 7;
-    ctx.beginPath();
-    ctx.moveTo(9, 0);
-    ctx.lineTo(9 + wlen, 0);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
+    var wlen = wp ? wp.len : 6;
+    var wcol = wp ? wp.color : "#ccc";
     if (wp && wp.type === "gun") {
-      ctx.fillStyle = wcol;
-      ctx.fillRect(9 + wlen - 8, -4, 10, 8);
-      ctx.fillStyle = "#1a1a22";
-      ctx.fillRect(9 + wlen - 11, -1.5, 5.5, 5.5);
+      pr(3, -1, wlen, 2, wcol);
+      pr(3 + wlen - 1, -2, 2, 3, wcol);
+      pr(3 + wlen - 2, 0, 1, 2, "#222");
     } else {
-      ctx.fillStyle = wcol;
-      ctx.beginPath();
-      ctx.moveTo(9 + wlen, 0);
-      ctx.lineTo(9 + wlen + 5, -3.5);
-      ctx.lineTo(9 + wlen + 5, 3.5);
-      ctx.fill();
+      pr(3, -1, wlen, 2, wcol);
+      pr(3 + wlen, -1, 1, 2, wcol);
     }
     ctx.restore();
 
     if (atk > 0 && wp && wp.type === "melee") {
-      var arcA = atk / 12;
-      ctx.strokeStyle = "rgba(255,40,110," + (0.55 * arcA) + ")";
-      ctx.lineWidth = 3.2;
-      ctx.beginPath();
-      ctx.arc(0, 0, 19 + wlen * 0.5, -1 + atkSwing * 0.3, 1 + atkSwing * 0.3);
-      ctx.stroke();
+      ctx.globalAlpha = alpha * 0.4 * (atk / 12);
+      pr(4, -3, 3, 1, "#ff286e");
+      pr(5, -1, 3, 1, "#ff286e");
+      pr(4, 1, 3, 1, "#ff286e");
+    }
+
+    if (hide) {
+      ctx.globalAlpha = alpha * 0.2;
+      pr(-5, -6, 10, 12, "#00f5ff");
     }
 
     ctx.restore();
@@ -183,35 +101,50 @@ window.Sprites = (function () {
   function drawWall(ctx, sx, sy, w, h) {
     ctx.fillStyle = "#1a1a28";
     ctx.fillRect(sx, sy, w, h);
+    var bs = 8;
     ctx.fillStyle = "#222232";
-    var bs = 12;
     for (var by = 0; by < h; by += bs) {
-      for (var bx = ((by / bs) | 0) % 2 === 0 ? 0 : bs / 2; bx < w; bx += bs) {
+      var off = ((by / bs) | 0) % 2 === 0 ? 0 : bs / 2;
+      for (var bx = off; bx < w; bx += bs) {
         ctx.fillRect(sx + bx + 1, sy + by + 1, bs - 2, bs - 2);
       }
     }
-    ctx.strokeStyle = "#ff286e";
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(sx + 1.5, sy + 1.5, w - 3, h - 3);
+    ctx.fillStyle = "#ff286e";
+    ctx.fillRect(sx, sy, w, 2);
+    ctx.fillRect(sx, sy + h - 2, w, 2);
+    ctx.fillRect(sx, sy, 2, h);
+    ctx.fillRect(sx + w - 2, sy, 2, h);
   }
 
-  function drawDoor(ctx, sx, sy, w, h, open) {
+  function drawDoor(ctx, sx, sy, w, h, open, canHide) {
     if (open) {
-      ctx.fillStyle = "rgba(0,245,255,0.25)";
+      ctx.fillStyle = "rgba(0,245,255,0.22)";
       ctx.fillRect(sx, sy, w, h);
-      ctx.strokeStyle = "#00f5ff";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(sx + 2, sy + 2, w - 4, h - 4);
       ctx.fillStyle = "#00f5ff";
-      ctx.font = "bold 12px system-ui";
+      ctx.fillRect(sx, sy, w, 2);
+      ctx.fillRect(sx, sy + h - 2, w, 2);
+      ctx.fillRect(sx, sy, 2, h);
+      ctx.fillRect(sx + w - 2, sy, 2, h);
+      ctx.font = "bold 11px monospace";
       ctx.textAlign = "center";
       ctx.fillText("EXIT", sx + w / 2, sy + h / 2 + 4);
     } else {
-      ctx.fillStyle = "#3a1520";
+      ctx.fillStyle = "#2a1520";
       ctx.fillRect(sx, sy, w, h);
-      ctx.strokeStyle = "#ff286e";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(sx + 2, sy + 2, w - 4, h - 4);
+      ctx.fillStyle = "#3a1a28";
+      ctx.fillRect(sx + 4, sy + 4, w / 2 - 6, h - 8);
+      ctx.fillRect(sx + w / 2 + 2, sy + 4, w / 2 - 6, h - 8);
+      ctx.fillStyle = "#ff286e";
+      ctx.fillRect(sx, sy, w, 2);
+      ctx.fillRect(sx, sy + h - 2, w, 2);
+      ctx.fillRect(sx, sy, 2, h);
+      ctx.fillRect(sx + w - 2, sy, 2, h);
+      if (canHide) {
+        ctx.fillStyle = "#00f5ff";
+        ctx.font = "bold 9px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("HIDE", sx + w / 2, sy + h / 2 + 3);
+      }
     }
   }
 
