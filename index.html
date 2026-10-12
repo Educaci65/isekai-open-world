@@ -5,46 +5,104 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0f">
-<title>NEON RUSH</title>
-<link rel="stylesheet" href="css/style.css?v=4">
+<title>Hotline Miami</title>
+<style>
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0a0a0f;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .game-wrap {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0f;
+    overflow: hidden;
+  }
+
+  .game-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border: none;
+    overflow: hidden;
+  }
+
+  @media (min-width: 900px) and (min-aspect-ratio: 16/9) {
+    .game-frame {
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+    }
+  }
+
+  .game-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #000;
+  }
+
+  .bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    background: linear-gradient(180deg, rgba(0,0,0,.75), transparent);
+    pointer-events: none;
+  }
+
+  .bar span {
+    color: #ff286e;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: .12em;
+    text-shadow: 0 0 10px rgba(255,40,110,.5);
+  }
+
+  @media (max-height: 480px) {
+    .bar { display: none; }
+  }
+</style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="scan"></div>
-<div id="hud">
-  <div class="card">SEC <b id="secN">1</b> · KILLS <b id="kills">0</b></div>
-  <div class="card" style="text-align:right">SCORE <b id="score">0</b><div id="comboEl">x1</div></div>
-</div>
-<div id="levelTag">SECTOR 01</div>
-<div id="weaponTag">BAT</div>
-<div id="msg">
-  <div class="msg" id="mainMsg"></div>
-  <div class="msg sub" id="subMsg"></div>
-</div>
-<div id="joyZone">
-  <div id="joyBase"><div id="joyKnob"></div></div>
-</div>
-<div id="btns">
-  <div class="abtn dash" id="btnDash">DASH</div>
-  <div class="abtn" id="btnFire">FIRE</div>
-  <div class="abtn hit" id="btnHit">HIT</div>
-</div>
-<div id="overlay">
-  <h1>NEON RUSH</h1>
-  <div class="tag">100% PIXEL ART</div>
-  <p>Un golpe = muerte.<br>
-  Acercate a puertas <b style="color:#00f5ff">HIDE</b> y pulsa HIT para esconderte.<br>
-  Arrastra en el lado izquierdo para moverte.<br>
-  Joystick · HIT · FIRE · DASH</p>
-  <div class="masks" id="maskPick">
-    <div class="mask on" data-m="0">👹</div>
-    <div class="mask" data-m="1">😈</div>
-    <div class="mask" data-m="2">👺</div>
-    <div class="mask" data-m="3">💀</div>
+  <div class="bar">
+    <span>HOTLINE MIAMI</span>
   </div>
-  <button class="btn-main" id="btnStart" type="button">JUGAR</button>
-</div>
-<script src="js/sprites.js?v=4"></script>
-<script src="js/game.js?v=4"></script>
+
+  <div class="game-wrap">
+    <div class="game-frame">
+      <iframe
+        src="https://nite.games/embed/hotline-miami"
+        allow="fullscreen; autoplay; gamepad; pointer-lock"
+        allowfullscreen
+        loading="eager"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Hotline Miami">
+      </iframe>
+    </div>
+  </div>
 </body>
 </html>
