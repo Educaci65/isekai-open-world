@@ -1,23 +1,25 @@
 # NEON RUSH
 
-Top-down action game inspired by classic neon arcade combat.
+Pixel-art top-down action. Original sprites (not Hotline Miami assets).
 
 **Play:** https://educaci65.github.io/isekai-open-world/
 
-## Controls (mobile)
-- **Joystick** — move
-- **HIT** — melee attack
-- **FIRE** — shoot (if you have a gun)
-- **DASH** — dodge
+## Controles (móvil)
+- **Joystick** — mover
+- **HIT** — atacar / esconderse en puerta HIDE / salir del escondite
+- **FIRE** — disparar
+- **DASH** — esquivar
 
-## Structure
+## Mecánicas
+- Un golpe = muerte
+- Puertas **HIDE**: acércate y pulsa HIT para esconderte (los enemigos no te ven)
+- Historia al inicio de cada sector
+- Combos y score
+
+## Estructura
 ```
 index.html
 css/style.css
-js/sprites.js   — pixel-style character / wall drawing
-js/game.js      — game loop, levels, AI, combat
+js/sprites.js
+js/game.js
 ```
-
-## Notes
-Original pixel-art style sprites (not official Hotline Miami assets).
-Vanilla JS + Canvas 2D. No dependencies.
