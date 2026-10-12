@@ -11,7 +11,7 @@
   var score = 0, combo = 1, comboTimer = 0, kills = 0, levelIndex = 0, maskId = 0;
   var walls = [], enemies = [], doors = [], pickups = [], bullets = [], particles = [], blood = [], trails = [], dust = [];
   var player = null;
-  var storyMode = false, storyLines = [], storyIdx = 0;
+  var storyMode = false, storyLines = [], storyIdx = 0, storyTimer = 0;
   var MASKS = Sprites.MASKS;
   var WEAPONS = Sprites.WEAPONS;
 
@@ -84,11 +84,84 @@
   }
 
   var LEVELS = [
-    { name: "LOBBY", map: ["##############","#P...........#","#..###.......#","#..#.#...E...#","#..#H#.......#","#..#.#####...#","#..........E.#","#...E........#","#......###...#","#..S...#H#...#","#......#.....#","#...E........#","#..........D.#","##############"]},
-    { name: "HALLS", map: ["##################","#P...............#","#.####.####.####.#","#.#..#.#H.#.#..#.#","#.#E.#.#S.#.#E.#.#","#.#..#.#..#.#..#.#","#....E.....E.....#","#.####.####.####.#","#................#","#..E...S...E.....#","#.......H......D.#","##################"]},
-    { name: "STORAGE", map: ["####################","#P.................#","#..##..##..##......#","#..##..##..##......#","#.......E..........#","#..E.........S.....#","#......####........#","#......#H.#...E....#","#..S...#..#........#","#......####........#","#..............E...#","#..E.....S....H....#","#................D.#","####################"]},
-    { name: "CLUB", map: ["######################","#P....................#","#..##.E.##.E.##.S.....#","#..##...##...##.......#","#.....................#","#.S...#######...E.....#","#.....#..H..#.........#","#..E..#..S..#.....E...#","#.....#.....#.........#","#.....#######...S.....#","#.....................#","#..##...##.E.##...H...#","#..##.E.##...##.....D.#","######################"]},
-    { name: "FINALE", map: ["########################","#P......................#","#..##.E.##.E.##.S.##....#","#..##...##...##...##....#","#.......................#","#.S...#########...E.....#","#.....#...H...#.........#","#..E..#...S...#......E..#","#.....#.......#.........#","#.....#########...S.....#","#.......................#","#..##...##.S.##...##.H..#","#..##.E.##...##.E.##..D.#","########################"]}
+    { name: "LOBBY", map: [
+      "##############",
+      "#P...........#",
+      "#..###.......#",
+      "#..#.#...E...#",
+      "#..#H#.......#",
+      "#..#.#####...#",
+      "#..........E.#",
+      "#...E........#",
+      "#......###...#",
+      "#..S...#H#...#",
+      "#......#.....#",
+      "#...E........#",
+      "#..........D.#",
+      "##############"
+    ]},
+    { name: "HALLS", map: [
+      "##################",
+      "#P...............#",
+      "#.####.####.####.#",
+      "#.#..#.#H.#.#..#.#",
+      "#.#E.#.#S.#.#E.#.#",
+      "#.#..#.#..#.#..#.#",
+      "#....E.....E.....#",
+      "#.####.####.####.#",
+      "#................#",
+      "#..E...S...E.....#",
+      "#.......H......D.#",
+      "##################"
+    ]},
+    { name: "STORAGE", map: [
+      "####################",
+      "#P.................#",
+      "#..##..##..##......#",
+      "#..##..##..##......#",
+      "#.......E..........#",
+      "#..E.........S.....#",
+      "#......####........#",
+      "#......#H.#...E....#",
+      "#..S...#..#........#",
+      "#......####........#",
+      "#..............E...#",
+      "#..E.....S....H....#",
+      "#................D.#",
+      "####################"
+    ]},
+    { name: "CLUB", map: [
+      "######################",
+      "#P....................#",
+      "#..##.E.##.E.##.S.....#",
+      "#..##...##...##.......#",
+      "#.....................#",
+      "#.S...#######...E.....#",
+      "#.....#..H..#.........#",
+      "#..E..#..S..#.....E...#",
+      "#.....#.....#.........#",
+      "#.....#######...S.....#",
+      "#.....................#",
+      "#..##...##.E.##...H...#",
+      "#..##.E.##...##.....D.#",
+      "######################"
+    ]},
+    { name: "FINALE", map: [
+      "########################",
+      "#P......................#",
+      "#..##.E.##.E.##.S.##....#",
+      "#..##...##...##...##....#",
+      "#.......................#",
+      "#.S...#########...E.....#",
+      "#.....#...H...#.........#",
+      "#..E..#...S...#......E..#",
+      "#.....#.......#.........#",
+      "#.....#########...S.....#",
+      "#.......................#",
+      "#..##...##.S.##...##.H..#",
+      "#..##.E.##...##.E.##..D.#",
+      "########################"
+    ]}
   ];
 
   function makeEnemy(x, y, type) {
@@ -461,7 +534,7 @@
 
   function die() {
     if (dead || !player || !player.alive) return;
-    if (player.hiding) return;
+    if (player.hiding) return; /* safe while hidden */
     player.alive = false;
     dead = true;
     running = false;
@@ -516,27 +589,127 @@
         player.x = player.hideDoor.x + player.hideDoor.w / 2;
         player.y = player.hideDoor.y + player.hideDoor.h / 2;
       }
+      player.vx = 0; player.vy = 0;
     } else if (player.dashT > 0) {
       player.dashT--;
       tryMove(player, player.vx, player.vy);
-      player.walk += 0.55;
-      trails.push({ x: player.x, y: player.y, a: player.angle, life: 8, m: maskId });
+      player.vx *= 0.92; player.vy *= 0.92;
+      if (frame % 2 === 0) trails.push({ x: player.x, y: player.y, a: player.angle, life: 8, m: maskId });
       spawnDust(player.x, player.y);
     } else {
-      var mx = keys.x, my = keys.y, len = Math.hypot(mx, my);
-      if (len > 0.08) {
-        mx /= len; my /= len;
-        tryMove(player, mx * player.speed, my * player.speed);
-        player.angle = Math.atan2(my, mx);
-        player.walk += 0.38;
+      var spd = player.speed;
+      var mx = keys.x * spd, my = keys.y * spd;
+      tryMove(player, mx, my);
+      if (Math.hypot(keys.x, keys.y) > 0.15) {
+        player.walk += 0.25;
         if (frame % 6 === 0) spawnDust(player.x, player.y);
-      } else {
-        player.walk *= 0.9;
       }
     }
-    if (trails.length > 14) trails.shift();
 
-    var i, p, e, d, a, canSee, j, b, w;
+    /* pickups */
+    if (!player.hiding) {
+      var i, p, d;
+      for (i = pickups.length - 1; i >= 0; i--) {
+        p = pickups[i];
+        if (dist(player.x, player.y, p.x, p.y) < 22) {
+          player.weapon = p.weapon;
+          player.ammo = p.ammo || 0;
+          pickups.splice(i, 1);
+          showMsg(WEAPONS[p.weapon] ? WEAPONS[p.weapon].name : "ARMA", "", 900);
+          updateHUD();
+        }
+      }
+    }
+
+    /* exit */
+    if (levelClear && !player.hiding) {
+      for (i = 0; i < doors.length; i++) {
+        d = doors[i];
+        if (d.exit && dist(player.x, player.y, d.x + d.w / 2, d.y + d.h / 2) < 28) {
+          nextLevel();
+          return;
+        }
+      }
+    }
+
+    /* enemies AI */
+    for (i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (!e.alive) {
+        if (e.deadT > 0) e.deadT--;
+        continue;
+      }
+      if (e.hitFlash > 0) e.hitFlash--;
+      if (e.atkT > 0) e.atkT--;
+      if (e.cd > 0) e.cd--;
+
+      var canSee = !player.hiding && dist(e.x, e.y, player.x, player.y) < 220 && !lineBlocked(e.x, e.y, player.x, player.y);
+      if (canSee) e.alert = 90;
+      if (e.alert > 0) e.alert--;
+
+      if ((e.alert > 0 || canSee) && !player.hiding) {
+        var ang = Math.atan2(player.y - e.y, player.x - e.x);
+        e.angle = ang;
+        var spdE = e.speed;
+        tryMove(e, Math.cos(ang) * spdE, Math.sin(ang) * spdE);
+        e.walk += 0.2;
+        if (e.type === "shooter" && e.cd <= 0 && dist(e.x, e.y, player.x, player.y) < 180) {
+          e.cd = 28;
+          e.atkT = 6;
+          var ba = ang + (Math.random() - 0.5) * 0.08;
+          bullets.push({ x: e.x + Math.cos(ba) * 14, y: e.y + Math.sin(ba) * 14, vx: Math.cos(ba) * 7, vy: Math.sin(ba) * 7, life: 40, from: "enemy", color: "#ff4422" });
+        } else if (e.type === "melee" && dist(e.x, e.y, player.x, player.y) < 28 && e.cd <= 0) {
+          e.cd = 22;
+          e.atkT = 10;
+          if (player.inv <= 0) die();
+        }
+      } else {
+        e.timer--;
+        if (e.timer <= 0) {
+          e.timer = 40 + Math.random() * 60;
+          e.px = e.x + (Math.random() - 0.5) * 80;
+          e.py = e.y + (Math.random() - 0.5) * 80;
+        }
+        var dx = e.px - e.x, dy = e.py - e.y;
+        if (Math.hypot(dx, dy) > 6) {
+          e.angle = Math.atan2(dy, dx);
+          tryMove(e, Math.cos(e.angle) * e.speed * 0.55, Math.sin(e.angle) * e.speed * 0.55);
+          e.walk += 0.12;
+        }
+      }
+    }
+
+    /* bullets */
+    for (i = bullets.length - 1; i >= 0; i--) {
+      var b = bullets[i];
+      b.x += b.vx; b.y += b.vy; b.life--;
+      if (b.life <= 0 || solidCircle(b.x, b.y, 2)) { bullets.splice(i, 1); continue; }
+      if (b.from === "player") {
+        for (var j = 0; j < enemies.length; j++) {
+          e = enemies[j];
+          if (e.alive && Math.hypot(b.x - e.x, b.y - e.y) < e.r + 3) {
+            killEnemy(e); e.hitFlash = 6;
+            bullets.splice(i, 1);
+            break;
+          }
+        }
+      } else if (!player.hiding && player.inv <= 0 && Math.hypot(b.x - player.x, b.y - player.y) < player.r + 2) {
+        die();
+        bullets.splice(i, 1);
+      }
+    }
+
+    /* particles / blood / trails / dust */
+    for (i = blood.length - 1; i >= 0; i--) {
+      p = blood[i];
+      p.x += p.vx; p.y += p.vy; p.vx *= 0.92; p.vy *= 0.92; p.life--;
+      if (p.life <= 0) blood.splice(i, 1);
+    }
+    for (i = particles.length - 1; i >= 0; i--) {
+      p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.life--;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
     for (i = trails.length - 1; i >= 0; i--) {
       trails[i].life--;
       if (trails[i].life <= 0) trails.splice(i, 1);
@@ -544,135 +717,6 @@
     for (i = dust.length - 1; i >= 0; i--) {
       dust[i].life--;
       if (dust[i].life <= 0) dust.splice(i, 1);
-    }
-
-    if (!player.hiding) {
-      for (i = pickups.length - 1; i >= 0; i--) {
-        p = pickups[i];
-        if (dist(player.x, player.y, p.x, p.y) < 26) {
-          player.weapon = p.weapon;
-          player.ammo = p.ammo || WEAPONS[p.weapon].ammo || 0;
-          pickups.splice(i, 1);
-          showMsg(WEAPONS[p.weapon].name, "", 900);
-          updateHUD();
-        }
-      }
-    }
-
-    if (levelClear && !player.hiding) {
-      for (i = 0; i < doors.length; i++) {
-        if (!doors[i].exit) continue;
-        if (dist(player.x, player.y, doors[i].x + doors[i].w / 2, doors[i].y + doors[i].h / 2) < 40) {
-          nextLevel();
-          return;
-        }
-      }
-    }
-
-    for (i = 0; i < enemies.length; i++) {
-      e = enemies[i];
-      if (!e.alive) {
-        if (e.deadT > 0) e.deadT--;
-        continue;
-      }
-      if (e.hitFlash > 0) e.hitFlash--;
-      if (e.atkT > 0) e.atkT--;
-      e.cd = Math.max(0, e.cd - 1);
-      e.timer--;
-      d = dist(e.x, e.y, player.x, player.y);
-      canSee = !player.hiding && d < 220 && !lineBlocked(e.x, e.y, player.x, player.y);
-      if (canSee) e.alert = 120;
-      if (e.alert > 0) e.alert--;
-
-      if ((e.alert > 0 || canSee) && !player.hiding) {
-        a = Math.atan2(player.y - e.y, player.x - e.x);
-        e.angle = a;
-        if (e.type === "shooter" && d < 90) tryMove(e, -Math.cos(a) * e.speed, -Math.sin(a) * e.speed);
-        else tryMove(e, Math.cos(a) * e.speed, Math.sin(a) * e.speed);
-        e.walk += 0.32;
-        if (e.type === "melee" && d < e.r + player.r + 3 && e.cd <= 0 && player.inv <= 0) {
-          e.cd = 40;
-          e.atkT = 10;
-          die();
-          return;
-        }
-        if (e.type === "shooter" && d < 200 && e.cd <= 0 && canSee) {
-          e.cd = 45;
-          e.atkT = 6;
-          a = Math.atan2(player.y - e.y, player.x - e.x) + (Math.random() - 0.5) * 0.1;
-          bullets.push({
-            x: e.x + Math.cos(a) * 14,
-            y: e.y + Math.sin(a) * 14,
-            vx: Math.cos(a) * 7,
-            vy: Math.sin(a) * 7,
-            life: 40,
-            from: "enemy",
-            color: "#ff4466"
-          });
-        }
-      } else {
-        if (e.timer <= 0) {
-          e.px = e.x + (Math.random() - 0.5) * 80;
-          e.py = e.y + (Math.random() - 0.5) * 80;
-          e.timer = 40 + Math.random() * 50;
-        }
-        a = Math.atan2(e.py - e.y, e.px - e.x);
-        e.angle = a;
-        tryMove(e, Math.cos(a) * e.speed * 0.4, Math.sin(a) * e.speed * 0.4);
-        e.walk += 0.12;
-      }
-    }
-
-    for (i = bullets.length - 1; i >= 0; i--) {
-      b = bullets[i];
-      b.x += b.vx;
-      b.y += b.vy;
-      b.life--;
-      var hitW = false;
-      for (j = 0; j < walls.length; j++) {
-        w = walls[j];
-        if (b.x > w.x && b.x < w.x + w.w && b.y > w.y && b.y < w.y + w.h) {
-          hitW = true;
-          break;
-        }
-      }
-      if (hitW || b.life <= 0) {
-        bullets.splice(i, 1);
-        continue;
-      }
-      if (b.from === "player") {
-        for (j = 0; j < enemies.length; j++) {
-          e = enemies[j];
-          if (!e.alive) continue;
-          if (Math.hypot(b.x - e.x, b.y - e.y) < e.r + 2) {
-            killEnemy(e);
-            e.hitFlash = 8;
-            bullets.splice(i, 1);
-            break;
-          }
-        }
-      } else if (!player.hiding && player.inv <= 0 && Math.hypot(b.x - player.x, b.y - player.y) < player.r + 2) {
-        bullets.splice(i, 1);
-        die();
-        return;
-      }
-    }
-
-    for (i = blood.length - 1; i >= 0; i--) {
-      p = blood[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vx *= 0.88;
-      p.vy *= 0.88;
-      p.life--;
-      if (p.life <= 0) blood.splice(i, 1);
-    }
-    for (i = particles.length - 1; i >= 0; i--) {
-      p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life--;
-      if (p.life <= 0) particles.splice(i, 1);
     }
   }
 
@@ -700,8 +744,7 @@
     var x1 = Math.ceil((cam.x + W) / ts) + 1, y1 = Math.ceil((cam.y + H) / ts) + 1;
     for (ty = y0; ty <= y1; ty++) {
       for (tx = x0; tx <= x1; tx++) {
-        ctx.fillStyle = ((tx + ty) & 1) ? "#12121c" : "#0e0e16";
-        ctx.fillRect(tx * ts - cam.x, ty * ts - cam.y, ts, ts);
+        Sprites.drawFloorTile(ctx, tx * ts - cam.x, ty * ts - cam.y, ts, (tx + ty) & 1);
       }
     }
 
@@ -771,66 +814,52 @@
         continue;
       }
       Sprites.drawChar(ctx, e.x - cam.x, e.y - cam.y, e.angle, {
-        col: {
-          body: "#c8a090",
-          jacket: e.type === "shooter" ? "#a02028" : "#701818",
-          mask: "#1a1010",
-          accent: "#c04040",
-          shoe: "#0a0a10"
-        },
+        col: { body: "#c8b8b0", jacket: e.type === "shooter" ? "#c04040" : "#a03030", mask: "#1a1010", accent: "#802020", shoe: "#0a0a10" },
         eye: e.alert > 0 ? "#ff286e" : "#ff8866",
         walk: e.walk, atkT: e.atkT, weapon: e.weapon, flash: e.hitFlash, pixelScale: 2
       });
       if (e.alert > 0 && !player.hiding) {
         ctx.fillStyle = "#ff286e";
-        ctx.font = "bold 14px monospace";
+        ctx.font = "bold 12px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("!", Math.round(e.x - cam.x), Math.round(e.y - cam.y - 20));
+        ctx.fillText("!", e.x - cam.x, e.y - cam.y - 22);
       }
     }
 
     if (player && player.alive) {
-      m = MASKS[maskId];
-      var alpha = (player.inv > 0 && (player.inv & 2)) ? 0.35 : 1;
+      var alpha = player.inv > 0 && (player.inv & 2) ? 0.4 : 1;
       Sprites.drawChar(ctx, player.x - cam.x, player.y - cam.y, player.angle, {
-        col: m, eye: m.eye, walk: player.walk, atkT: player.atkT,
+        col: MASKS[maskId], eye: MASKS[maskId].eye, walk: player.walk, atkT: player.atkT,
         weapon: player.weapon, alpha: alpha, hide: player.hiding, pixelScale: 2
       });
       if (player.muzzle > 0 && !player.hiding) {
-        var mx = Math.round(player.x - cam.x + Math.cos(player.angle) * 28);
-        var my = Math.round(player.y - cam.y + Math.sin(player.angle) * 28);
-        ctx.fillStyle = "#fff8a0";
-        ctx.fillRect(mx - 3, my - 3, 6, 6);
+        ctx.fillStyle = "#ffcc00";
+        ctx.globalAlpha = player.muzzle / 5;
+        var mx = player.x + Math.cos(player.angle) * 18 - cam.x;
+        var my = player.y + Math.sin(player.angle) * 18 - cam.y;
+        ctx.fillRect(Math.round(mx - 2), Math.round(my - 2), 4, 4);
+        ctx.globalAlpha = 1;
       }
     }
 
     for (i = 0; i < bullets.length; i++) {
       b = bullets[i];
       ctx.fillStyle = b.color;
-      ctx.fillRect(Math.round(b.x - cam.x) - 2, Math.round(b.y - cam.y) - 2, 4, 4);
+      ctx.fillRect(Math.round(b.x - cam.x - 1), Math.round(b.y - cam.y - 1), 3, 3);
     }
 
     for (i = 0; i < particles.length; i++) {
       p = particles[i];
       ctx.globalAlpha = p.life / 16;
       ctx.fillStyle = p.color;
-      ctx.fillRect(Math.round(p.x - cam.x), Math.round(p.y - cam.y), 2, 2);
+      ctx.fillRect(Math.round(p.x - cam.x), Math.round(p.y - cam.y), p.s | 0, p.s | 0);
     }
     ctx.globalAlpha = 1;
-
-    if (storyMode) {
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillRect(0, 0, W, H);
-    }
   }
 
   function loop() {
-    try {
-      update();
-      draw();
-    } catch (err) {
-      console.error(err);
-    }
+    update();
+    draw();
     requestAnimationFrame(loop);
   }
   loop();
