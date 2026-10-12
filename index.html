@@ -2,107 +2,484 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0f">
-<title>Hotline Miami</title>
+<title>Touch Controls Template</title>
 <style>
   *, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
   }
 
   html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #0a0a0f;
+    background: #0a0a12;
     font-family: system-ui, -apple-system, sans-serif;
+    color: #eee;
   }
 
-  .game-wrap {
+  #stage {
     position: fixed;
     inset: 0;
+    width: 100vw;
+    height: 100vh;
+    width: 100dvw;
+    height: 100dvh;
+    background: #12121a;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #0a0a0f;
     overflow: hidden;
   }
 
-  .game-frame {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    max-width: 100vw;
-    max-height: 100vh;
-    border: none;
-    overflow: hidden;
-  }
-
-  @media (min-width: 900px) and (min-aspect-ratio: 16/9) {
-    .game-frame {
-      width: min(100vw, calc(100vh * 16 / 9));
-      height: min(100vh, calc(100vw * 9 / 16));
-    }
-  }
-
-  .game-frame iframe {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: 0;
+  #stage canvas {
     display: block;
-    background: #000;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
   }
 
-  .bar {
+  #hud {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    z-index: 10;
+    z-index: 20;
+    padding: 12px 14px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    pointer-events: none;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
-    padding-top: max(8px, env(safe-area-inset-top));
-    background: linear-gradient(180deg, rgba(0,0,0,.75), transparent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: #9a9ab0;
+  }
+  #hud b { color: #ff286e; }
+  #keysState {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15;
+    text-align: center;
+    pointer-events: none;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #666;
+  }
+  #keysState .on { color: #00f5ff; }
+
+  #touchUI {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
     pointer-events: none;
   }
 
-  .bar span {
-    color: #ff286e;
-    font-weight: 800;
-    font-size: 13px;
-    letter-spacing: .12em;
-    text-shadow: 0 0 10px rgba(255,40,110,.5);
+  @media (max-width: 768px), (pointer: coarse) {
+    #touchUI { display: block; }
+    #keysState .desktop-hint { display: none; }
   }
 
-  @media (max-height: 480px) {
-    .bar { display: none; }
+  #joyZone {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 48%;
+    height: 45%;
+    pointer-events: auto;
+  }
+
+  #joyBase {
+    position: absolute;
+    left: 20px;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 40, 110, 0.45);
+    background: rgba(15, 10, 18, 0.55);
+  }
+
+  #joyKnob {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 52px;
+    height: 52px;
+    margin: -26px 0 0 -26px;
+    border-radius: 50%;
+    background: #ff286e;
+    box-shadow: 0 0 14px rgba(255, 40, 110, 0.45);
+    will-change: transform;
+  }
+
+  #btnZone {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 48%;
+    height: 45%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 0 16px max(20px, env(safe-area-inset-bottom)) 0;
+  }
+
+  .abtn {
+    pointer-events: auto;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 2px solid #00f5ff;
+    background: radial-gradient(circle at 30% 30%, #00d4e0, #007a85);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.15;
+  }
+  .abtn:active, .abtn.pressed {
+    transform: scale(0.9);
+    filter: brightness(1.15);
+  }
+  .abtn.hit {
+    border-color: #ff286e;
+    background: radial-gradient(circle at 30% 30%, #ff5a9a, #9a1040);
+  }
+  .abtn.sec {
+    width: 56px;
+    height: 56px;
+    font-size: 10px;
+    border-color: #b47fff;
+    background: radial-gradient(circle at 30% 30%, #b47fff, #5a28a0);
+  }
+
+  @media (max-width: 380px) {
+    #joyBase { width: 100px; height: 100px; }
+    #joyKnob { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+    .abtn { width: 60px; height: 60px; }
+    .abtn.sec { width: 48px; height: 48px; }
   }
 </style>
 </head>
 <body>
-  <div class="bar">
-    <span>HOTLINE MIAMI</span>
+  <div id="hud">
+    <span>TOUCH → KEYS</span>
+    <span>WASD · SPACE · CLICK</span>
   </div>
 
-  <div class="game-wrap">
-    <div class="game-frame">
-      <iframe
-        src="https://nite.games/embed/hotline-miami"
-        allow="fullscreen; autoplay; gamepad; pointer-lock"
-        allowfullscreen
-        loading="eager"
-        referrerpolicy="no-referrer-when-downgrade"
-        title="Hotline Miami">
-      </iframe>
+  <div id="keysState">
+    <div class="desktop-hint">En PC usa teclado / ratón<br>En móvil aparecen controles táctiles</div>
+    <div style="margin-top:16px">
+      <span id="kW">W</span>
+      <span id="kA">A</span>
+      <span id="kS">S</span>
+      <span id="kD">D</span>
+      ·
+      <span id="kSp">SPACE</span>
+      ·
+      <span id="kClk">CLICK</span>
     </div>
   </div>
+
+  <div id="stage">
+    <canvas id="c"></canvas>
+  </div>
+
+  <div id="touchUI">
+    <div id="joyZone">
+      <div id="joyBase">
+        <div id="joyKnob"></div>
+      </div>
+    </div>
+    <div id="btnZone">
+      <div class="abtn sec" id="btnInteract" data-key="KeyE">USE</div>
+      <div class="abtn" id="btnFire" data-mouse="left">FIRE</div>
+      <div class="abtn hit" id="btnAction" data-key="Space">HIT</div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var pressed = Object.create(null);
+
+  function keyEvent(type, code, key) {
+    var ev = new KeyboardEvent(type, {
+      key: key,
+      code: code,
+      keyCode: code === "Space" ? 32 : code.charCodeAt(code.length - 1),
+      which: code === "Space" ? 32 : code.charCodeAt(code.length - 1),
+      bubbles: true,
+      cancelable: true
+    });
+    window.dispatchEvent(ev);
+    document.dispatchEvent(ev);
+  }
+
+  function mouseEvent(type) {
+    var cx = window.innerWidth / 2;
+    var cy = window.innerHeight / 2;
+    var ev = new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: cx,
+      clientY: cy,
+      button: 0,
+      buttons: type === "mouseup" ? 0 : 1
+    });
+    window.dispatchEvent(ev);
+    document.dispatchEvent(ev);
+    var canvas = document.getElementById("c");
+    if (canvas) canvas.dispatchEvent(ev);
+  }
+
+  function holdKey(code, key) {
+    if (pressed[code]) return;
+    pressed[code] = true;
+    keyEvent("keydown", code, key);
+    updateHudKeys();
+  }
+
+  function releaseKey(code, key) {
+    if (!pressed[code]) return;
+    delete pressed[code];
+    keyEvent("keyup", code, key);
+    updateHudKeys();
+  }
+
+  function updateHudKeys() {
+    setOn("kW", pressed.KeyW);
+    setOn("kA", pressed.KeyA);
+    setOn("kS", pressed.KeyS);
+    setOn("kD", pressed.KeyD);
+    setOn("kSp", pressed.Space);
+    setOn("kClk", pressed._mouse);
+  }
+  function setOn(id, on) {
+    var el = document.getElementById(id);
+    if (el) el.className = on ? "on" : "";
+  }
+
+  window.addEventListener("keydown", function (e) {
+    if (e.repeat) return;
+    if (e.code === "KeyW" || e.code === "ArrowUp") pressed.KeyW = true;
+    if (e.code === "KeyA" || e.code === "ArrowLeft") pressed.KeyA = true;
+    if (e.code === "KeyS" || e.code === "ArrowDown") pressed.KeyS = true;
+    if (e.code === "KeyD" || e.code === "ArrowRight") pressed.KeyD = true;
+    if (e.code === "Space") pressed.Space = true;
+    updateHudKeys();
+  });
+  window.addEventListener("keyup", function (e) {
+    if (e.code === "KeyW" || e.code === "ArrowUp") delete pressed.KeyW;
+    if (e.code === "KeyA" || e.code === "ArrowLeft") delete pressed.KeyA;
+    if (e.code === "KeyS" || e.code === "ArrowDown") delete pressed.KeyS;
+    if (e.code === "KeyD" || e.code === "ArrowRight") delete pressed.KeyD;
+    if (e.code === "Space") delete pressed.Space;
+    updateHudKeys();
+  });
+
+  var joyBase = document.getElementById("joyBase");
+  var joyKnob = document.getElementById("joyKnob");
+  var joyZone = document.getElementById("joyZone");
+  var JOY_R = 48;
+  var joyId = null;
+  var originX = 0, originY = 0;
+  var dead = 0.28;
+  var dirMap = { w: false, a: false, s: false, d: false };
+
+  function applyDir(nx, ny) {
+    var next = {
+      w: ny < -dead,
+      s: ny > dead,
+      a: nx < -dead,
+      d: nx > dead
+    };
+    if (next.w !== dirMap.w) { dirMap.w = next.w; next.w ? holdKey("KeyW", "w") : releaseKey("KeyW", "w"); }
+    if (next.s !== dirMap.s) { dirMap.s = next.s; next.s ? holdKey("KeyS", "s") : releaseKey("KeyS", "s"); }
+    if (next.a !== dirMap.a) { dirMap.a = next.a; next.a ? holdKey("KeyA", "a") : releaseKey("KeyA", "a"); }
+    if (next.d !== dirMap.d) { dirMap.d = next.d; next.d ? holdKey("KeyD", "d") : releaseKey("KeyD", "d"); }
+  }
+
+  function setKnob(dx, dy) {
+    var len = Math.hypot(dx, dy) || 1;
+    var cl = Math.min(len, JOY_R);
+    var jx = (dx / len) * cl;
+    var jy = (dy / len) * cl;
+    joyKnob.style.transform = "translate(" + jx + "px," + jy + "px)";
+    applyDir(jx / JOY_R, jy / JOY_R);
+  }
+
+  function resetJoy() {
+    joyId = null;
+    joyKnob.style.transform = "translate(0,0)";
+    applyDir(0, 0);
+  }
+
+  joyZone.addEventListener("touchstart", function (e) {
+    e.preventDefault();
+    var t = e.changedTouches[0];
+    joyId = t.identifier;
+    var r = joyBase.getBoundingClientRect();
+    originX = r.left + r.width / 2;
+    originY = r.top + r.height / 2;
+    setKnob(t.clientX - originX, t.clientY - originY);
+  }, { passive: false });
+
+  joyZone.addEventListener("touchmove", function (e) {
+    e.preventDefault();
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      var t = e.changedTouches[i];
+      if (t.identifier === joyId) {
+        setKnob(t.clientX - originX, t.clientY - originY);
+        break;
+      }
+    }
+  }, { passive: false });
+
+  function endJoy(e) {
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joyId) {
+        resetJoy();
+        break;
+      }
+    }
+  }
+  joyZone.addEventListener("touchend", endJoy, { passive: false });
+  joyZone.addEventListener("touchcancel", endJoy, { passive: false });
+
+  function bindHoldButton(el, onDown, onUp) {
+    if (!el) return;
+    var holding = false;
+    function down(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (holding) return;
+      holding = true;
+      el.classList.add("pressed");
+      onDown();
+    }
+    function up(e) {
+      if (!holding) return;
+      holding = false;
+      el.classList.remove("pressed");
+      onUp();
+    }
+    el.addEventListener("touchstart", down, { passive: false });
+    el.addEventListener("touchend", up, { passive: false });
+    el.addEventListener("touchcancel", up, { passive: false });
+    el.addEventListener("mousedown", down);
+    el.addEventListener("mouseup", up);
+    el.addEventListener("mouseleave", up);
+  }
+
+  bindHoldButton(document.getElementById("btnAction"), function () {
+    holdKey("Space", " ");
+  }, function () {
+    releaseKey("Space", " ");
+  });
+
+  bindHoldButton(document.getElementById("btnFire"), function () {
+    pressed._mouse = true;
+    updateHudKeys();
+    mouseEvent("mousedown");
+  }, function () {
+    delete pressed._mouse;
+    updateHudKeys();
+    mouseEvent("mouseup");
+    mouseEvent("click");
+  });
+
+  bindHoldButton(document.getElementById("btnInteract"), function () {
+    holdKey("KeyE", "e");
+  }, function () {
+    releaseKey("KeyE", "e");
+  });
+
+  var canvas = document.getElementById("c");
+  var ctx = canvas.getContext("2d");
+  var px = 0, py = 0;
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!px && !py) {
+      px = window.innerWidth / 2;
+      py = window.innerHeight / 2;
+    }
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function loop() {
+    var spd = 3.2;
+    if (pressed.KeyW) py -= spd;
+    if (pressed.KeyS) py += spd;
+    if (pressed.KeyA) px -= spd;
+    if (pressed.KeyD) px += spd;
+    px = Math.max(20, Math.min(window.innerWidth - 20, px));
+    py = Math.max(20, Math.min(window.innerHeight - 20, py));
+
+    ctx.fillStyle = "#0e0e16";
+    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+    ctx.strokeStyle = "#1a1a28";
+    ctx.lineWidth = 1;
+    for (var x = 0; x < window.innerWidth; x += 40) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, window.innerHeight); ctx.stroke();
+    }
+    for (var y = 0; y < window.innerHeight; y += 40) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(window.innerWidth, y); ctx.stroke();
+    }
+
+    ctx.fillStyle = pressed.Space ? "#fff" : "#ff286e";
+    ctx.beginPath();
+    ctx.arc(px, py, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#00f5ff";
+    ctx.beginPath();
+    ctx.arc(px - 5, py - 4, 3, 0, Math.PI * 2);
+    ctx.arc(px + 5, py - 4, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (pressed._mouse) {
+      ctx.strokeStyle = "#ffcc00";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + 40, py);
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
 </body>
 </html>
