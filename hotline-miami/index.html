@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>HOTLINE MIAMI</title>
+  <style>
+    :root {
+      --bg: #05070d;
+      --panel: rgba(14, 17, 27, 0.85);
+      --accent: #ff2a6d;
+      --accent-2: #00f0ff;
+      --text: #f4f7fb;
+      --button: rgba(255,255,255,0.08);
+      --button-pressed: rgba(255,255,255,0.2);
+      --shadow: rgba(0,0,0,0.5);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: monospace;
+      touch-action: none;
+      user-select: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #game-shell {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, rgba(255, 42, 109, 0.12), transparent 25%),
+        linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.4)),
+        #05070d;
+    }
+
+    canvas {
+      display: block;
+      border: none;
+      max-width: 100%;
+      max-height: 100%;
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+      image-rendering: pixelated;
+      background: #000;
+      z-index: 1;
+    }
+
+    #loading-text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(16px, 2.4vw, 28px);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-shadow: 2px 2px 0 var(--accent-2), -2px -2px 0 yellow;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.25s ease;
+    }
+
+    #loading-text.hidden {
+      opacity: 0;
+    }
+
+    #touch-controls {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 180px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 50;
+      padding: 0 16px 14px 16px;
+      gap: 18px;
+    }
+
+    .pad,
+    .actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .actions {
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    .control-group {
+      display: grid;
+      grid-template-columns: repeat(3, 48px);
+      grid-template-rows: repeat(3, 48px);
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 12px 20px var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+
+    .action-box {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: var(--button);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      box-shadow: inset 0 1px rgba(255,255,255,0.12), 0 12px 18px var(--shadow);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .action-box:active,
+    .action-box.active,
+    .control-btn:active,
+    .control-btn.active {
+      background: var(--button-pressed);
+      transform: scale(0.96);
+    }
+
+    .control-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: var(--button);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: inset 0 1px rgba(255,255,255,0.12), 0 8px 16px var(--shadow);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .control-btn[data-key="up"] { grid-column: 2; grid-row: 1; }
+    .control-btn[data-key="left"] { grid-column: 1; grid-row: 2; }
+    .control-btn[data-key="center"] { grid-column: 2; grid-row: 2; background: rgba(255,255,255,0.05); }
+    .control-btn[data-key="right"] { grid-column: 3; grid-row: 2; }
+    .control-btn[data-key="down"] { grid-column: 2; grid-row: 3; }
+
+    @media (max-width: 480px) {
+      #touch-controls {
+        height: 160px;
+      }
+      .control-group {
+        gap: 6px;
+        padding: 8px 10px 10px;
+      }
+      .action-box {
+        width: 52px;
+        height: 52px;
+      }
+      .control-btn {
+        width: 42px;
+        height: 42px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-shell">
+    <canvas id="canvas" width="1920" height="1080"></canvas>
+    <div id="loading-text">LOADING</div>
+  </div>
+
+  <div id="touch-controls" aria-label="touch controls">
+    <div class="pad">
+      <div class="control-group" aria-label="direction pad">
+        <button class="control-btn" data-key="up" aria-label="up">▲</button>
+        <button class="control-btn" data-key="left" aria-label="left">◀</button>
+        <button class="control-btn" data-key="center" aria-label="center">•</button>
+        <button class="control-btn" data-key="right" aria-label="right">▶</button>
+        <button class="control-btn" data-key="down" aria-label="down">▼</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="action-box" data-key="KeyZ" aria-label="action">A</button>
+      <button class="action-box" data-key="KeyX" aria-label="shoot">B</button>
+      <button class="action-box" data-key="Space" aria-label="jump">J</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const sourceBase = 'https://raw.githubusercontent.com/genizy/web-port/main/hotline-miami/';
+      const touchState = new Set();
+
+      function normalizeRelativeUrl(rawUrl) {
+        if (!rawUrl) return rawUrl;
+        const value = String(rawUrl);
+        if (/^(?:[a-z]+:)?\/\//i.test(value) || /^data:/i.test(value) || /^blob:/i.test(value) || /^javascript:/i.test(value)) {
+          return value;
+        }
+        if (value.startsWith('/')) {
+          return sourceBase + value.replace(/^\//, '');
+        }
+        if (value.startsWith('./') || value.startsWith('../') || value.startsWith('html5game/') || value.startsWith('sounds/') || value.startsWith('images/') || value.startsWith('audio/')) {
+          return sourceBase + value.replace(/^\.\//, '').replace(/^\.\.\//, '');
+        }
+        return value;
+      }
+
+      const origOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+        const rewritten = normalizeRelativeUrl(url);
+        return origOpen.call(this, method, rewritten, async, user, password);
+      };
+
+      const originalFetch = window.fetch;
+      window.fetch = function(input, init) {
+        const next = typeof input === 'string' ? normalizeRelativeUrl(input) : input;
+        return originalFetch.call(this, next, init);
+      };
+
+      const originalImageSrc = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
+      Object.defineProperty(Image.prototype, 'src', {
+        set(v) { return originalImageSrc.set.call(this, normalizeRelativeUrl(v)); },
+        get() { return originalImageSrc.get.call(this); },
+        configurable: true
+      });
+
+      const originalAudioSrc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'src');
+      Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+        set(v) { return originalAudioSrc.set.call(this, normalizeRelativeUrl(v)); },
+        get() { return originalAudioSrc.get.call(this); },
+        configurable: true
+      });
+
+      function dispatchKey(key, isDown) {
+        const ev = new KeyboardEvent(isDown ? 'keydown' : 'keyup', {
+          key,
+          code: key,
+          bubbles: true,
+          cancelable: true
+        });
+        window.dispatchEvent(ev);
+        if (document.activeElement && document.activeElement !== document.body) {
+          document.activeElement.dispatchEvent(ev);
+        }
+      }
+
+      const keyMap = {
+        up: 'ArrowUp',
+        left: 'ArrowLeft',
+        right: 'ArrowRight',
+        down: 'ArrowDown',
+        KeyZ: 'KeyZ',
+        KeyX: 'KeyX',
+        Space: 'Space'
+      };
+
+      function setButtonState(btn, pressed) {
+        btn.classList.toggle('active', pressed);
+        const key = keyMap[btn.dataset.key] || btn.dataset.key;
+        if (key) {
+          if (pressed && !touchState.has(key)) touchState.add(key);
+          if (!pressed && touchState.has(key)) touchState.delete(key);
+          dispatchKey(key, pressed);
+        }
+      }
+
+      document.querySelectorAll('[data-key]').forEach((btn) => {
+        const press = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setButtonState(btn, true);
+        };
+        const release = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setButtonState(btn, false);
+        };
+        btn.addEventListener('pointerdown', press, {passive: false});
+        btn.addEventListener('pointerup', release, {passive: false});
+        btn.addEventListener('pointerleave', release, {passive: false});
+        btn.addEventListener('pointercancel', release, {passive: false});
+      });
+
+      window.addEventListener('keydown', (ev) => {
+        if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyZ','KeyX','Space'].includes(ev.key)) {
+          document.querySelectorAll('[data-key]').forEach((btn) => {
+            const mapped = keyMap[btn.dataset.key] || btn.dataset.key;
+            if (mapped === ev.key) btn.classList.add('active');
+          });
+        }
+      });
+      window.addEventListener('keyup', (ev) => {
+        if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyZ','KeyX','Space'].includes(ev.key)) {
+          document.querySelectorAll('[data-key]').forEach((btn) => {
+            const mapped = keyMap[btn.dataset.key] || btn.dataset.key;
+            if (mapped === ev.key) btn.classList.remove('active');
+          });
+        }
+      });
+
+      const loader = document.getElementById('loading-text');
+      const gameScript = document.createElement('script');
+      gameScript.src = sourceBase + 'html5game/HotlineMiami.js?cache=' + Date.now();
+      gameScript.async = true;
+      gameScript.onload = function () {
+        setTimeout(() => {
+          if (window.GameMaker_Init) {
+            window.GameMaker_Init();
+          }
+          loader.classList.add('hidden');
+        }, 200);
+      };
+      document.body.appendChild(gameScript);
+    })();
+  </script>
+</body>
+</html>
