@@ -1,0 +1,175 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0c0c12;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #e8e8f0;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #12121a;
+}
+
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #8a8aa0;
+  pointer-events: none;
+}
+
+#hud span {
+  background: rgba(0, 0, 0, 0.45);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+/* Touch UI: only on coarse pointers / narrow screens */
+#touch-ui {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  #touch-ui { display: block; }
+}
+
+#joy-zone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 42%;
+  pointer-events: auto;
+}
+
+#joy-base {
+  position: absolute;
+  left: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 80, 120, 0.4);
+  background: rgba(12, 10, 16, 0.55);
+}
+
+#joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: #ff5080;
+  box-shadow: 0 0 12px rgba(255, 80, 128, 0.4);
+  will-change: transform;
+}
+
+#btn-zone {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  height: 42%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 16px max(18px, env(safe-area-inset-bottom)) 0;
+  pointer-events: none;
+}
+
+.btn {
+  pointer-events: auto;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2px solid #40d4e8;
+  background: radial-gradient(circle at 30% 30%, #40d4e8, #0a7080);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn:active, .btn.pressed {
+  transform: scale(0.9);
+  filter: brightness(1.15);
+}
+
+.btn-primary {
+  border-color: #ff5080;
+  background: radial-gradient(circle at 30% 30%, #ff70a0, #a01840);
+}
+
+.btn-secondary {
+  width: 54px;
+  height: 54px;
+  font-size: 13px;
+  border-color: #a070ff;
+  background: radial-gradient(circle at 30% 30%, #a070ff, #5020a0);
+}
+
+#btn-fs {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 40;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.5);
+  color: #ccc;
+  font-size: 16px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+@media (max-width: 380px) {
+  #joy-base { width: 100px; height: 100px; }
+  #joy-knob { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+  .btn { width: 58px; height: 58px; }
+  .btn-secondary { width: 46px; height: 46px; }
+}
+
+/* Hide touch UI when keyboard preferred (optional class) */
+body.hide-touch #touch-ui { display: none !important; }
