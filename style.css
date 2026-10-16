@@ -5,16 +5,15 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
 }
 
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0c0c12;
-  font-family: system-ui, -apple-system, sans-serif;
-  color: #e8e8f0;
+  background: #050510;
+  font-family: "SF Mono", ui-monospace, "Cascadia Code", monospace;
+  color: #c8f0ff;
 }
 
 #app {
@@ -30,146 +29,213 @@ html, body {
   display: block;
   width: 100%;
   height: 100%;
-  background: #12121a;
+  background: #08081a;
+  touch-action: none;
 }
 
 #hud {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   z-index: 20;
   display: flex;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 10px 12px;
   padding-top: max(10px, env(safe-area-inset-top));
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: #8a8aa0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #6af0ff;
   pointer-events: none;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.35);
 }
-
 #hud span {
-  background: rgba(0, 0, 0, 0.45);
-  padding: 4px 10px;
-  border-radius: 6px;
+  background: rgba(0, 20, 40, 0.65);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-/* Touch UI: only on coarse pointers / narrow screens */
+#panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: max(48px, calc(env(safe-area-inset-top) + 40px));
+  z-index: 25;
+  background: rgba(6, 8, 24, 0.88);
+  border: 1px solid rgba(255, 40, 120, 0.45);
+  box-shadow: 0 0 24px rgba(255, 40, 120, 0.12), inset 0 0 20px rgba(0, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 12px;
+  max-height: 42vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #ff4f9a;
+  text-transform: uppercase;
+}
+.field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 255, 0.35);
+  background: rgba(0, 10, 24, 0.9);
+  color: #e0f7ff;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  outline: none;
+  touch-action: auto;
+}
+.field input:focus {
+  border-color: #ff4f9a;
+  box-shadow: 0 0 12px rgba(255, 79, 154, 0.25);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.neon, .ghost {
+  flex: 1;
+  padding: 12px 10px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.neon {
+  border: 1px solid #ff4f9a;
+  background: linear-gradient(180deg, rgba(255, 40, 120, 0.35), rgba(80, 0, 40, 0.6));
+  color: #fff;
+  box-shadow: 0 0 16px rgba(255, 40, 120, 0.25);
+}
+.neon:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ghost {
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: transparent;
+  color: #6af0ff;
+}
+.ghost:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+#log {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #9ad4e8;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 18vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+#log .ok { color: #5dffb0; }
+#log .warn { color: #ffd060; }
+#log .err { color: #ff6b8a; }
+#log .dim { color: #5a7a90; }
+
+/* Touch controls */
 #touch-ui {
   display: none;
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: 15;
   pointer-events: none;
 }
-
 @media (max-width: 900px), (pointer: coarse) {
   #touch-ui { display: block; }
 }
-
 #joy-zone {
   position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 50%;
-  height: 42%;
+  left: 0; bottom: 0;
+  width: 48%;
+  height: 38%;
   pointer-events: auto;
+  touch-action: none;
 }
-
 #joy-base {
   position: absolute;
-  left: 18px;
-  bottom: max(18px, env(safe-area-inset-bottom));
-  width: 120px;
-  height: 120px;
+  left: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 80, 120, 0.4);
-  background: rgba(12, 10, 16, 0.55);
+  border: 2px solid rgba(255, 79, 154, 0.45);
+  background: rgba(8, 6, 20, 0.55);
 }
-
 #joy-knob {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 52px;
-  height: 52px;
-  margin: -26px 0 0 -26px;
+  left: 50%; top: 50%;
+  width: 48px; height: 48px;
+  margin: -24px 0 0 -24px;
   border-radius: 50%;
-  background: #ff5080;
-  box-shadow: 0 0 12px rgba(255, 80, 128, 0.4);
+  background: #ff4f9a;
+  box-shadow: 0 0 14px rgba(255, 79, 154, 0.5);
   will-change: transform;
 }
-
 #btn-zone {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 50%;
-  height: 42%;
+  right: 0; bottom: 0;
+  width: 48%;
+  height: 38%;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 0 16px max(18px, env(safe-area-inset-bottom)) 0;
+  gap: 10px;
+  padding: 0 14px max(16px, env(safe-area-inset-bottom)) 0;
   pointer-events: none;
 }
-
 .btn {
   pointer-events: auto;
-  width: 68px;
-  height: 68px;
+  width: 64px; height: 64px;
   border-radius: 50%;
-  border: 2px solid #40d4e8;
-  background: radial-gradient(circle at 30% 30%, #40d4e8, #0a7080);
+  border: 2px solid #6af0ff;
+  background: radial-gradient(circle at 30% 30%, #6af0ff, #0a6070);
   color: #fff;
-  font-size: 16px;
   font-weight: 800;
-  cursor: pointer;
+  font-size: 15px;
+  touch-action: none;
 }
-
-.btn:active, .btn.pressed {
-  transform: scale(0.9);
-  filter: brightness(1.15);
-}
-
 .btn-primary {
-  border-color: #ff5080;
-  background: radial-gradient(circle at 30% 30%, #ff70a0, #a01840);
+  border-color: #ff4f9a;
+  background: radial-gradient(circle at 30% 30%, #ff70a8, #901030);
 }
-
 .btn-secondary {
-  width: 54px;
-  height: 54px;
-  font-size: 13px;
-  border-color: #a070ff;
-  background: radial-gradient(circle at 30% 30%, #a070ff, #5020a0);
+  width: 50px; height: 50px;
+  font-size: 12px;
+  border-color: #b070ff;
+  background: radial-gradient(circle at 30% 30%, #b070ff, #402080);
 }
-
-#btn-fs {
-  position: absolute;
-  top: max(10px, env(safe-area-inset-top));
-  right: 12px;
-  z-index: 40;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 8px;
-  background: rgba(0,0,0,0.5);
-  color: #ccc;
-  font-size: 16px;
-  cursor: pointer;
-  pointer-events: auto;
-}
+.btn:active, .btn.pressed { transform: scale(0.92); }
 
 @media (max-width: 380px) {
-  #joy-base { width: 100px; height: 100px; }
-  #joy-knob { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
-  .btn { width: 58px; height: 58px; }
-  .btn-secondary { width: 46px; height: 46px; }
+  #joy-base { width: 96px; height: 96px; }
+  #joy-knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+  .btn { width: 56px; height: 56px; }
+  .btn-secondary { width: 44px; height: 44px; }
+  #panel { max-height: 36vh; }
 }
-
-/* Hide touch UI when keyboard preferred (optional class) */
-body.hide-touch #touch-ui { display: none !important; }

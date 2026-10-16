@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0c0c12">
-  <title>Top-Down Engine</title>
+  <meta name="theme-color" content="#050510">
+  <title>Binary Loader · Canvas</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,23 +15,32 @@
     <canvas id="game"></canvas>
 
     <div id="hud">
-      <span id="fps">60 FPS</span>
+      <span id="fps">—</span>
       <span id="status">Listo</span>
+    </div>
+
+    <div id="panel">
+      <label class="field">
+        <span>URL del binario (Release u otra)</span>
+        <input id="bin-url" type="url" autocomplete="off" spellcheck="false"
+          placeholder="https://github.com/USER/REPO/releases/download/TAG/archivo.bin">
+      </label>
+      <div class="row">
+        <button type="button" id="btn-load" class="neon">Descargar y escanear</button>
+        <button type="button" id="btn-cancel" class="ghost" disabled>Cancelar</button>
+      </div>
+      <div id="log" aria-live="polite"></div>
     </div>
 
     <div id="touch-ui" aria-hidden="true">
       <div id="joy-zone">
-        <div id="joy-base">
-          <div id="joy-knob"></div>
-        </div>
+        <div id="joy-base"><div id="joy-knob"></div></div>
       </div>
       <div id="btn-zone">
-        <button type="button" class="btn btn-secondary" id="btn-b" data-action="b">B</button>
-        <button type="button" class="btn btn-primary" id="btn-a" data-action="a">A</button>
+        <button type="button" class="btn btn-secondary" id="btn-b">B</button>
+        <button type="button" class="btn btn-primary" id="btn-a">A</button>
       </div>
     </div>
-
-    <button type="button" id="btn-fs" title="Pantalla completa">⛶</button>
   </div>
   <script src="script.js"></script>
 </body>
