@@ -1,7 +1,6 @@
 /**
  * Generic progressive binary downloader + magic-byte scanner (Canvas UI).
- * - fetch + ReadableStream progress
- * - CORS proxy (corsproxy.io) for GitHub Releases / cross-origin hosts
+ * - fetch + ReadableStream progress (direct, no CORS proxy)
  * - scan for OggS / PNG / RIFF / fLaC signatures
  * - lightweight top-down placeholder + touch controls
  */
@@ -26,7 +25,6 @@
   const DEAD = 0.22;
   const PLAYER_SPEED = 170;
   const PLAYER_R = 14;
-  const CORS_PROXY = "https://corsproxy.io/?";
 
   const SIGS = [
     { name: "OggS", bytes: [0x4f, 0x67, 0x67, 0x53] },
@@ -60,22 +58,8 @@
   function clearLog() { logEl.textContent = ""; }
   function setStatus(t) { statusEl.textContent = t; }
 
-  /** Clean pasted URL and wrap with CORS proxy when needed. */
-  function resolveFetchUrl(inputUrl) {
-    var cleanUrl = String(inputUrl || "")
-      .trim()
-      .replace(/[\r\n\t]+/g, "")
-      .replace(/\s+/g, "");
-
-    // Already a proxy URL — don't double-wrap
-    if (/^https?:\/\/corsproxy\.io\//i.test(cleanUrl) ||
-        /^https?:\/\/api\.allorigins\.win\//i.test(cleanUrl) ||
-        /^https?:\/\/cors\.bridged\.cc\//i.test(cleanUrl)) {
-      return { cleanUrl: cleanUrl, fetchUrl: cleanUrl, proxied: true };
-    }
-
-    var fetchUrl = CORS_PROXY + encodeURIComponent(cleanUrl);
-    return { cleanUrl: cleanUrl, fetchUrl: fetchUrl, proxied: true };
+  function cleanUrl(inputUrl) {
+    return String(inputUrl || "").trim().replace(/[\r\n\t]+/g, "");
   }
 
   function resize() {
@@ -105,8 +89,8 @@
     btnCancel.disabled = false;
     setStatus("Descargando\u2026");
 
-    var resolved = resolveFetchUrl(inputUrl);
-    if (!resolved.cleanUrl) {
+    const url = cleanUrl(inputUrl);
+    if (!url) {
       log("URL vac\u00eda.", "warn");
       downloading = false;
       btnLoad.disabled = false;
@@ -114,34 +98,37 @@
       setStatus("Error");
       return;
     }
-
-    // Reflect cleaned URL back into the input
-    urlInput.value = resolved.cleanUrl;
+    urlInput.value = url;
 
     abortCtrl = new AbortController();
     const t0 = performance.now();
 
     try {
-      log("Origen: " + resolved.cleanUrl, "dim");
-      if (resolved.proxied) log("V\u00eda proxy: corsproxy.io", "dim");
+      log("GET " + url, "dim");
 
-      const res = await fetch(resolved.fetchUrl, {
+      const response = await fetch(url, {
         signal: abortCtrl.signal,
         method: "GET",
         credentials: "omit",
         cache: "no-store",
       });
-      if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
 
-      const total = Number(res.headers.get("Content-Length")) || 0;
-      if (!res.body || !res.body.getReader) {
+      if (!response.ok) {
+        throw new Error(
+          "Error al descargar el archivo (" + response.status + " " + response.statusText + "). " +
+          "Comprueba la URL y que el servidor permita CORS desde esta p\u00e1gina."
+        );
+      }
+
+      const total = Number(response.headers.get("Content-Length")) || 0;
+      if (!response.body || !response.body.getReader) {
         log("ReadableStream no disponible; usando arrayBuffer()", "warn");
-        const buf = await res.arrayBuffer();
+        const buf = await response.arrayBuffer();
         downloadPct = 1;
         lastBuffer = buf;
         log("Descarga completa: " + formatBytes(buf.byteLength), "ok");
       } else {
-        const reader = res.body.getReader();
+        const reader = response.body.getReader();
         const chunks = [];
         let received = 0;
         while (true) {
@@ -181,7 +168,7 @@
       } else {
         log(String(err && err.message ? err.message : err), "err");
         setStatus("Error");
-        log("Si el proxy falla, prueba otra red o un mirror con CORS abierto.", "dim");
+        log("Si ves un error de red/CORS, el host del archivo debe permitir origen cruzado.", "dim");
       }
       downloadPct = 0;
     } finally {
@@ -346,7 +333,7 @@
     el.addEventListener("pointercancel", release);
     el.addEventListener("pointerleave", release);
   }
-  bindHold(btnA, function () { input.a = true; }, function () { input.a = false; });
+  bindHold(btnA, function () { input.a = true; }, function () { input.b = false; });
   bindHold(btnB, function () { input.b = true; }, function () { input.b = false; });
 
   function syncKeys() {
@@ -439,6 +426,6 @@
 
   resize();
   setStatus("Listo");
-  log("Pega la URL del binario. Se usar\u00e1 corsproxy.io autom\u00e1ticamente.", "dim");
+  log("Pega la URL del binario. Fetch directo (sin proxy).", "dim");
   requestAnimationFrame(frame);
 })();
