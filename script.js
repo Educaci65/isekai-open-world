@@ -333,7 +333,7 @@
     el.addEventListener("pointercancel", release);
     el.addEventListener("pointerleave", release);
   }
-  bindHold(btnA, function () { input.a = true; }, function () { input.b = false; });
+  bindHold(btnA, function () { input.a = true; }, function () { input.a = false; });
   bindHold(btnB, function () { input.b = true; }, function () { input.b = false; });
 
   function syncKeys() {
