@@ -1,11 +1,9 @@
 /**
  * Generic progressive binary downloader + magic-byte scanner (Canvas UI).
  * - fetch + ReadableStream progress
- * - scan for OggS / PNG / RIFF (WAV) signatures
+ * - CORS proxy (corsproxy.io) for GitHub Releases / cross-origin hosts
+ * - scan for OggS / PNG / RIFF / fLaC signatures
  * - lightweight top-down placeholder + touch controls
- *
- * Set your binary URL in the input (e.g. GitHub Releases).
- * Does not implement proprietary game-format parsers.
  */
 (function () {
   "use strict";
@@ -28,6 +26,7 @@
   const DEAD = 0.22;
   const PLAYER_SPEED = 170;
   const PLAYER_R = 14;
+  const CORS_PROXY = "https://corsproxy.io/?";
 
   const SIGS = [
     { name: "OggS", bytes: [0x4f, 0x67, 0x67, 0x53] },
@@ -61,6 +60,24 @@
   function clearLog() { logEl.textContent = ""; }
   function setStatus(t) { statusEl.textContent = t; }
 
+  /** Clean pasted URL and wrap with CORS proxy when needed. */
+  function resolveFetchUrl(inputUrl) {
+    var cleanUrl = String(inputUrl || "")
+      .trim()
+      .replace(/[\r\n\t]+/g, "")
+      .replace(/\s+/g, "");
+
+    // Already a proxy URL — don't double-wrap
+    if (/^https?:\/\/corsproxy\.io\//i.test(cleanUrl) ||
+        /^https?:\/\/api\.allorigins\.win\//i.test(cleanUrl) ||
+        /^https?:\/\/cors\.bridged\.cc\//i.test(cleanUrl)) {
+      return { cleanUrl: cleanUrl, fetchUrl: cleanUrl, proxied: true };
+    }
+
+    var fetchUrl = CORS_PROXY + encodeURIComponent(cleanUrl);
+    return { cleanUrl: cleanUrl, fetchUrl: fetchUrl, proxied: true };
+  }
+
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     viewW = window.innerWidth;
@@ -77,7 +94,7 @@
   }
   window.addEventListener("resize", resize);
 
-  async function downloadBinary(url) {
+  async function downloadBinary(inputUrl) {
     if (downloading) return;
     clearLog();
     scanHits = [];
@@ -88,14 +105,29 @@
     btnCancel.disabled = false;
     setStatus("Descargando\u2026");
 
+    var resolved = resolveFetchUrl(inputUrl);
+    if (!resolved.cleanUrl) {
+      log("URL vac\u00eda.", "warn");
+      downloading = false;
+      btnLoad.disabled = false;
+      btnCancel.disabled = true;
+      setStatus("Error");
+      return;
+    }
+
+    // Reflect cleaned URL back into the input
+    urlInput.value = resolved.cleanUrl;
+
     abortCtrl = new AbortController();
     const t0 = performance.now();
 
     try {
-      log("GET " + url, "dim");
-      const res = await fetch(url, {
+      log("Origen: " + resolved.cleanUrl, "dim");
+      if (resolved.proxied) log("V\u00eda proxy: corsproxy.io", "dim");
+
+      const res = await fetch(resolved.fetchUrl, {
         signal: abortCtrl.signal,
-        mode: "cors",
+        method: "GET",
         credentials: "omit",
         cache: "no-store",
       });
@@ -107,7 +139,7 @@
         const buf = await res.arrayBuffer();
         downloadPct = 1;
         lastBuffer = buf;
-        log("Descarga completa: " + buf.byteLength + " bytes", "ok");
+        log("Descarga completa: " + formatBytes(buf.byteLength), "ok");
       } else {
         const reader = res.body.getReader();
         const chunks = [];
@@ -149,7 +181,7 @@
       } else {
         log(String(err && err.message ? err.message : err), "err");
         setStatus("Error");
-        log("Si falla por CORS, el host del archivo debe enviar Access-Control-Allow-Origin.", "dim");
+        log("Si el proxy falla, prueba otra red o un mirror con CORS abierto.", "dim");
       }
       downloadPct = 0;
     } finally {
@@ -407,6 +439,6 @@
 
   resize();
   setStatus("Listo");
-  log("Pega la URL del binario y pulsa Descargar. Escaneo gen\u00e9rico: OggS, PNG, RIFF, fLaC.", "dim");
+  log("Pega la URL del binario. Se usar\u00e1 corsproxy.io autom\u00e1ticamente.", "dim");
   requestAnimationFrame(frame);
 })();
